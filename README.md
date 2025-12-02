@@ -17,3 +17,7 @@ Pour communiquer avec la machine cible, Ansible utilise WinRM.
 `-- wrapper.sh : Wrapper pour definir des variables et executer ansible-playbook 
 ```
 
+## ToDo
+- Ajouter une variable mitigation avec des recommandations de remediation
+- Creer le script qui se base sur le JSON pour generer un rapport PDF/HTML ou autre.
+- Ajouter le reste des tasks
