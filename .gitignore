@@ -2,6 +2,6 @@ __pycache__/
 .bashrc
 .profile
 .lesshst
-.local
-.cache
-.ssh
+.local/
+.cache/
+.ssh/
