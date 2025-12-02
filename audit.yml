@@ -1,0 +1,204 @@
+- name: Windows Security Audit
+  hosts: windows
+  gather_facts: no
+  tasks:
+
+    # --- Local accounts ---
+    - name: Check Administrator account
+      win_shell: '(Get-LocalUser -Name "Administrator").Enabled'
+      register: admin_enabled
+
+    - name: Record Administrator account status
+      debug:
+        msg:
+          task: "Administrator account"
+          msg: "{{ 'enabled' if admin_enabled.stdout.strip() == 'True' else 'disabled' }}"
+          audit_status: "{{ 'FAIL' if admin_enabled.stdout.strip() == 'True' else 'PASS' }}"
+
+    - name: Check Guest account
+      win_shell: '(Get-LocalUser -Name "Guest").Enabled'
+      register: guest_enabled
+
+    - name: Record Guest account status
+      debug:
+        msg:
+          task: "Guest account"
+          msg: "{{ 'enabled' if guest_enabled.stdout.strip() == 'True' else 'disabled' }}"
+          audit_status: "{{ 'FAIL' if guest_enabled.stdout.strip() == 'True' else 'PASS' }}"
+
+    # --- Password policy ---
+    - name: Check minimum password length
+      win_shell: '(net accounts) -match "Minimum password length"'
+      register: password_length
+
+    - name: Record password policy
+      debug:
+        msg:
+          task: "Password minimum length"
+          msg: "{{ 'FAIL (<12)' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS (>=12)' }}"
+          audit_status: "{{ 'FAIL' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS' }}"
+
+    # --- LAPS installation ---
+    - name: Check LAPS installation
+      win_shell: |
+        if ((Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\LAPS") -or
+            (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GPExtensions\{D76B9641-3288-4f75-942D-087DE603E36B}")) {
+          Write-Output "True"
+        } else { 
+          Write-Output "False" 
+        }
+      register: laps_present
+
+    - name: Record LAPS status
+      debug:
+        msg:
+          task: "LAPS installation"
+          msg: "{{ 'installed' if laps_present.stdout.strip() == 'True' else 'not installed' }}"
+          audit_status: "{{ 'PASS' if laps_present.stdout.strip() == 'True' else 'FAIL' }}"
+
+    # --- UAC ---
+    - name: Check UAC (EnableLUA)
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA").EnableLUA'
+      register: uac
+
+    - name: Record UAC status
+      debug:
+        msg:
+          task: "UAC (EnableLUA)"
+          msg: "{{ 'enabled' if uac.stdout.strip() == '1' else 'disabled' }}"
+          audit_status: "{{ 'PASS' if uac.stdout.strip() == '1' else 'FAIL' }}"
+
+    # --- SMBv1 ---
+    - name: Check SMBv1
+      win_shell: '(Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol).State'
+      register: smb1
+
+    - name: Record SMBv1 status
+      debug:
+        msg:
+          task: "SMBv1"
+          msg: "{{ 'enabled' if smb1.stdout.strip() == 'Enabled' else 'disabled' }}"
+          audit_status: "{{ 'FAIL' if smb1.stdout.strip() == 'Enabled' else 'PASS' }}"
+
+    # --- SMB signing ---
+    - name: Check SMB server signing
+      win_shell: '(Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters" -Name "requiresecuritysignature").requiresecuritysignature'
+      register: smb_sig
+
+    - name: Record SMB signing status
+      debug:
+        msg:
+          task: "SMB signing"
+          msg: "{{ 'required' if smb_sig.stdout.strip() == '1' else 'not required' }}"
+          audit_status: "{{ 'PASS' if smb_sig.stdout.strip() == '1' else 'FAIL' }}"
+
+    # --- RDP Security ---
+    - name: Check RDP SecurityLayer
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "SecurityLayer").SecurityLayer'
+      register: rdp_sec
+
+    - name: Record RDP SecurityLayer
+      debug:
+        msg:
+          task: "RDP SecurityLayer"
+          msg: "{{ 'TLS (2)' if rdp_sec.stdout.strip() == '2' else 'not TLS' }}"
+          audit_status: "{{ 'PASS' if rdp_sec.stdout.strip() == '2' else 'FAIL' }}"
+
+    - name: Check RDP NLA
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication").UserAuthentication'
+      register: rdp_nla
+
+    - name: Record RDP NLA status
+      debug:
+        msg:
+          task: "RDP NLA"
+          msg: "{{ 'enabled' if rdp_nla.stdout.strip() == '1' else 'not enabled' }}"
+          audit_status: "{{ 'PASS' if rdp_nla.stdout.strip() == '1' else 'FAIL' }}"
+
+    # --- Potentially dangerous services ---
+    - name: Check dangerous services
+      win_shell: |
+        $services = @("WinHttpAutoProxySvc","WebClient","Spooler")
+        foreach ($svc in $services) {
+          try {
+            $s = Get-Service -Name $svc -ErrorAction Stop
+            if ($s.Status -eq "Running") { Write-Output "$svc:Running" }
+            else { Write-Output "$svc:Stopped" }
+          } catch { Write-Output "$svc:NotInstalled" }
+        }
+      register: dangerous_services
+
+    - name: Record dangerous services
+      debug:
+        msg:
+          task: "Service check"
+          msg: "{{ item }}"
+          audit_status: "{{ 'FAIL' if ':Running' in item else 'PASS' if ':Stopped' in item else 'WARNING' }}"
+      loop: "{{ dangerous_services.stdout_lines }}"
+
+    # --- Firewall ---
+    - name: Check Windows Firewall profiles
+      win_shell: 'Get-NetFirewallProfile | ForEach-Object { "$($_.Name):$($_.Enabled)" }'
+      register: firewall_profiles
+
+    - name: Record firewall profiles
+      debug:
+        msg:
+          task: "Firewall profile"
+          msg: "{{ item }}"
+          audit_status: "{{ 'PASS' if ':True' in item else 'FAIL' }}"
+      loop: "{{ firewall_profiles.stdout_lines }}"
+
+    # --- LLMNR ---
+    - name: Check LLMNR
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name "EnableMulticast").EnableMulticast'
+      register: llmnr
+
+    - name: Record LLMNR status
+      debug:
+        msg:
+          task: "LLMNR"
+          msg: "{{ 'disabled' if llmnr.stdout.strip() == '0' else 'enabled' }}"
+          audit_status: "{{ 'PASS' if llmnr.stdout.strip() == '0' else 'FAIL' }}"
+
+    # --- Audit Policy ---
+    - name: Check logon/logoff audit policy
+      win_shell: 'auditpol /get /category:"Logon/Logoff" | Select-String "Success and Failure"'
+      register: audit_policy
+
+    - name: Record audit policy
+      debug:
+        msg:
+          task: "Audit logon/logoff"
+          msg: "{{ 'configured' if audit_policy.stdout != '' else 'not configured' }}"
+          audit_status: "{{ 'PASS' if audit_policy.stdout != '' else 'FAIL' }}"
+
+    # --- Security log size ---
+    - name: Check security log max size
+      win_shell: '(Get-WinEvent -ListLog Security).MaximumSizeInBytes / 1MB'
+      register: sec_log_size
+
+    - name: Record security log size
+      debug:
+        msg:
+          task: "Security log size"
+          msg: "{{ '>=1GB' if sec_log_size.stdout|int >= 1024 else '<1GB' }}"
+          audit_status: "{{ 'PASS' if sec_log_size.stdout|int >= 1024 else 'WARNING' }}"
+
+    # --- Sysmon service ---
+    - name: Check Sysmon service
+      win_shell: |
+        try {
+          $svc = Get-Service -Name "Sysmon" -ErrorAction Stop
+          Write-Output "installed"
+        } catch {
+          Write-Output "not installed"
+        }
+      register: sysmon_status
+
+    - name: Record Sysmon status
+      debug:
+        msg:
+          task: "Sysmon service"
+          msg: "{{ 'installed' if sysmon_status.stdout.strip() == 'installed' else 'not installed' }}"
+          audit_status: "{{ 'PASS' if sysmon_status.stdout.strip() == 'installed' else 'INFO' }}"
