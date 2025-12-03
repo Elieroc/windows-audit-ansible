@@ -1,4 +1,3 @@
-# callback_plugins/concise_json.py
 from ansible.plugins.callback import CallbackBase
 import json
 
@@ -11,25 +10,34 @@ class CallbackModule(CallbackBase):
         super().__init__()
         self.results_by_host = {}
 
-    def _store_result(self, host, task_name, msg):
+    def _store_result(self, host, payload):
         if host not in self.results_by_host:
             self.results_by_host[host] = []
-        self.results_by_host[host].append(msg)
+        self.results_by_host[host].append(payload)
 
     def v2_runner_on_ok(self, result):
         host = result._host.get_name()
         msg = result._result.get('msg')
-        if msg:
-            # si msg est un dict (audit_status), stocke directement
-            if isinstance(msg, dict):
-                self._store_result(host, result.task_name, msg)
-            else:
-                self._store_result(host, result.task_name, {'task': result.task_name, 'msg': str(msg), 'audit_status': 'INFO'})
+        if not msg:
+            return
+        if isinstance(msg, dict):
+            payload = msg
+            if 'task' not in payload:
+                payload['task'] = result.task_name
+        else:
+            payload = {
+                'task': result.task_name,
+                'msg': str(msg)
+            }
+        self._store_result(host, payload)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         host = result._host.get_name()
         msg = result._result.get('msg') or result._result.get('stderr') or 'Task failed'
-        self._store_result(host, result.task_name, {'task': result.task_name, 'msg': str(msg), 'audit_status': 'FAIL'})
+        payload = msg if isinstance(msg, dict) else {'task': result.task_name, 'msg': str(msg)}
+        if isinstance(payload, dict) and 'audit_status' not in payload:
+            payload['audit_status'] = 'FAIL'
+        self._store_result(host, payload)
 
     def v2_playbook_on_stats(self, stats):
         from datetime import datetime
@@ -41,5 +49,5 @@ class CallbackModule(CallbackBase):
             })
         filename = f"exports/audit-{datetime.now().strftime('%F_%H-%M-%S')}.json"
         with open(filename, 'w') as f:
-            json.dump(output, f, indent=2)
-        print(f"\nJSON exporté : {filename}")
+            json.dump(output, f, indent=2, ensure_ascii=False)
+        print(f"\nConcise JSON exported: {filename}")
