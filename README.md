@@ -18,7 +18,6 @@ Pour communiquer avec la machine cible, Ansible utilise WinRM.
 ```
 
 ## ToDo
-- Ajouter une variable mitigation avec des recommandations de remediation
 - Creer le script qui se base sur le JSON pour generer un rapport PDF/HTML ou autre.
 - Ajouter le reste des tasks
 - Creer le playbook de remediation
