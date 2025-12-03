@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport d'Audit de Sécurité Windows - Détaillé</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid;
+        }
+        
+        .summary-card.score { border-color: #667eea; }
+        .summary-card.pass { border-color: #28a745; }
+        .summary-card.fail { border-color: #dc3545; }
+        .summary-card.warning { border-color: #ffc107; }
+        .summary-card.info { border-color: #17a2b8; }
+        
+        .summary-card h3 {
+            font-size: 0.9em;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-card.score .value { color: #667eea; }
+        .summary-card.pass .value { color: #28a745; }
+        .summary-card.fail .value { color: #dc3545; }
+        .summary-card.warning .value { color: #ffc107; }
+        .summary-card.info .value { color: #17a2b8; }
+        
+        .critical-alerts {
+            margin: 30px;
+            padding: 20px;
+            background: #fff5f5;
+            border-left: 5px solid #8b0000;
+            border-radius: 8px;
+        }
+        
+        .critical-alerts h2 {
+            color: #8b0000;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .high-alerts {
+            margin: 30px;
+            padding: 20px;
+            background: #fff8f0;
+            border-left: 5px solid #dc3545;
+            border-radius: 8px;
+        }
+        
+        .high-alerts h2 {
+            color: #dc3545;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .alert-item strong {
+            color: #343a40;
+        }
+        
+        .host-section {
+            padding: 30px;
+        }
+        
+        .host-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .host-header h2 {
+            font-size: 1.5em;
+        }
+        
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .tasks-table thead {
+            background: #343a40;
+            color: white;
+        }
+        
+        .tasks-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .tasks-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tasks-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .tasks-table tbody tr.expandable {
+            cursor: pointer;
+        }
+        
+        .tasks-table tbody tr.expandable:hover {
+            background: #e9ecef;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-badge.pass { background: #d4edda; color: #155724; }
+        .status-badge.fail { background: #f8d7da; color: #721c24; }
+        .status-badge.warning { background: #fff3cd; color: #856404; }
+        .status-badge.info { background: #d1ecf1; color: #0c5460; }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+        }
+        
+        .remediation-section {
+            display: none;
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 3px solid #667eea;
+            border-radius: 5px;
+        }
+        
+        .remediation-section.show {
+            display: block;
+        }
+        
+        .remediation-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .remediation-section p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .remediation-section pre {
+            background: #343a40;
+            color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .remediation-section code {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .references {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .references a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .references a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            background: #343a40;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+        
+        .toggle-icon {
+            float: right;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .export-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 1em;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .export-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .remediation-section {
+                display: block !important;
+            }
+            .export-button {
+                display: none;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 Rapport d'Audit de Sécurité Windows</h1>
+            <p>Rapport détaillé avec recommandations de remédiation</p>
+            <p>Généré le 03/12/2025 à 10:04:53</p>
+        </header>
+        
+        <div class="summary">
+            <div class="summary-card score">
+                <h3>Score de Sécurité</h3>
+                <div class="value">54%</div>
+                <p>6 / 11 conformes</p>
+            </div>
+            
+            <div class="summary-card fail">
+                <h3>Problèmes Critiques</h3>
+                <div class="value">0</div>
+                <p>Action immédiate</p>
+            </div>
+            
+            <div class="summary-card fail">
+                <h3>Problèmes Élevés</h3>
+                <div class="value">4</div>
+                <p>Haute priorité</p>
+            </div>
+            
+            <div class="summary-card pass">
+                <h3>Réussis</h3>
+                <div class="value">6</div>
+                <p>Conformes</p>
+            </div>
+            
+            <div class="summary-card warning">
+                <h3>Avertissements</h3>
+                <div class="value">1</div>
+                <p>À surveiller</p>
+            </div>
+        </div>
+
+        <div class="high-alerts">
+            <h2>⚠️ Problèmes de Haute Priorité</h2>
+
+            <div class="alert-item">
+                <strong>ESGI5-server</strong> - Administrator account: enabled
+            </div>
+
+            <div class="alert-item">
+                <strong>ESGI5-server</strong> - Password minimum length: FAIL (<12)
+            </div>
+
+            <div class="alert-item">
+                <strong>ESGI5-server</strong> - LAPS installation: not installed
+            </div>
+
+            <div class="alert-item">
+                <strong>ESGI5-server</strong> - SMB signing: not required
+            </div>
+
+        </div>
+
+        <div class="host-section">
+            <div class="host-header">
+                <h2>🖥️ ESGI5-server</h2>
+            </div>
+            
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Vérification</th>
+                        <th style="width: 30%;">Résultat</th>
+                        <th style="width: 15%;">Statut</th>
+                        <th style="width: 15%;">Sévérité</th>
+                        <th style="width: 10%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-0')">
+                        <td><strong>Administrator account</strong></td>
+                        <td>enabled</td>
+                        <td><span class="status-badge fail">FAIL</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-0">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Le compte Administrator intégré est activé, ce qui représente une cible privilégiée pour les attaquants.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Disable-LocalUser -Name 'Administrator'</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-1')">
+                        <td><strong>Guest account</strong></td>
+                        <td>disabled</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-1">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Le compte Guest permet un accès non authentifié au système.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Disable-LocalUser -Name 'Guest'</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-2')">
+                        <td><strong>Password minimum length</strong></td>
+                        <td>FAIL (<12)</td>
+                        <td><span class="status-badge fail">FAIL</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-2">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Les mots de passe courts sont vulnérables aux attaques par force brute.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>net accounts /minpwlen:12</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-3')">
+                        <td><strong>LAPS installation</strong></td>
+                        <td>not installed</td>
+                        <td><span class="status-badge fail">FAIL</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-3">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> LAPS (Local Administrator Password Solution) n'est pas installé. Sans LAPS, les mots de passe des administrateurs locaux peuvent être identiques sur plusieurs machines.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code># Télécharger LAPS depuis Microsoft
+# Installer le MSI LAPS
+# Étendre le schéma Active Directory
+Update-AdmPwdADSchema
+# Configurer la GPO pour activer LAPS</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-4')">
+                        <td><strong>UAC (EnableLUA)</strong></td>
+                        <td>enabled</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-4">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Le contrôle de compte d'utilisateur (UAC) protège contre les élévations de privilèges non autorisées.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'EnableLUA' -Value 1</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-5')">
+                        <td><strong>SMBv1</strong></td>
+                        <td>disabled</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #8b0000;">CRITICAL</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-5">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> SMBv1 est obsolète et vulnérable à de nombreuses attaques (WannaCry, NotPetya, etc.).</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-6')">
+                        <td><strong>SMB signing</strong></td>
+                        <td>not required</td>
+                        <td><span class="status-badge fail">FAIL</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-6">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> La signature SMB protège contre les attaques de type Man-in-the-Middle et relay.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters' -Name 'requiresecuritysignature' -Value 1
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters' -Name 'requiresecuritysignature' -Value 1</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-7')">
+                        <td><strong>RDP SecurityLayer</strong></td>
+                        <td>TLS (2)</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-7">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> La couche de sécurité RDP doit utiliser TLS pour chiffrer les communications.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'SecurityLayer' -Value 2</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-8')">
+                        <td><strong>RDP NLA</strong></td>
+                        <td>enabled</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #dc3545;">HIGH</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-8">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> L'authentification au niveau du réseau (NLA) force l'authentification avant l'établissement de la session RDP.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'UserAuthentication' -Value 1</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="" >
+                        <td><strong>Record dangerous services</strong></td>
+                        <td>All items completed</td>
+                        <td><span class="status-badge info">INFO</span></td>
+                        <td></td>
+                        <td style="text-align: center;"></td>
+                    </tr>
+
+                    <tr class="" >
+                        <td><strong>Record firewall profiles</strong></td>
+                        <td>All items completed</td>
+                        <td><span class="status-badge info">INFO</span></td>
+                        <td></td>
+                        <td style="text-align: center;"></td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-11')">
+                        <td><strong>LLMNR</strong></td>
+                        <td>enabled</td>
+                        <td><span class="status-badge fail">FAIL</span></td>
+                        <td><span class="severity-badge" style="background-color: #ffc107;">MEDIUM</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-11">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> LLMNR (Link-Local Multicast Name Resolution) peut être exploité pour des attaques de type credential relay.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Force
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name 'EnableMulticast' -Value 0</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-12')">
+                        <td><strong>Audit logon/logoff</strong></td>
+                        <td>configured</td>
+                        <td><span class="status-badge pass">PASS</span></td>
+                        <td><span class="severity-badge" style="background-color: #ffc107;">MEDIUM</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-12">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> L'audit des connexions permet de détecter les tentatives d'accès non autorisées.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>auditpol /set /category:'Logon/Logoff' /success:enable /failure:enable</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-13')">
+                        <td><strong>Security log size</strong></td>
+                        <td><1GB</td>
+                        <td><span class="status-badge warning">WARNING</span></td>
+                        <td><span class="severity-badge" style="background-color: #17a2b8;">LOW</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-13">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Un journal de sécurité trop petit peut perdre des événements importants.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code>wevtutil sl Security /ms:1073741824</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="expandable" onclick="toggleRemediation('remediation-14')">
+                        <td><strong>Sysmon service</strong></td>
+                        <td>not installed</td>
+                        <td><span class="status-badge info">INFO</span></td>
+                        <td><span class="severity-badge" style="background-color: #6c757d;">INFO</span></td>
+                        <td style="text-align: center;">📋</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="5" style="padding: 0;">
+                            <div class="remediation-section" id="remediation-14">
+                                <h4>🛠️ Recommandations de Remédiation</h4>
+                                <p><strong>Conseil :</strong> Sysmon fournit une journalisation détaillée des événements système pour la détection d'intrusion.</p>
+
+                                <p><strong>Commandes PowerShell :</strong></p>
+                                <pre><code># Télécharger Sysmon depuis Microsoft Sysinternals
+# Télécharger une configuration recommandée (ex: SwiftOnSecurity config)
+sysmon64.exe -accepteula -i sysmonconfig.xml</code></pre>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>Rapport généré automatiquement par le système d'audit Ansible</p>
+            <p>Machines auditées: 1 | Total vérifications: 15</p>
+        </footer>
+    </div>
+    
+    <button class="export-button" onclick="exportToPDF()">📄 Exporter en PDF</button>
+    
+    <script>
+        function toggleRemediation(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.toggle('show');
+            }
+        }
+        
+        function exportToPDF() {
+            const button = document.querySelector('.export-button');
+            button.style.display = 'none';
+            
+            const opt = {
+                margin: 10,
+                filename: 'rapport-audit-securite-2025-12-03.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            const remediations = document.querySelectorAll('.remediation-section');
+            remediations.forEach(r => r.classList.add('show'));
+            
+            html2pdf().set(opt).from(document.querySelector('.container')).save().then(() => {
+                remediations.forEach(r => r.classList.remove('show'));
+                button.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>

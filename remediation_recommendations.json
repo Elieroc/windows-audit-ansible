@@ -1,0 +1,183 @@
+{
+  "Administrator account": {
+    "severity": "HIGH",
+    "description": "Le compte Administrator intégré est activé, ce qui représente une cible privilégiée pour les attaquants.",
+    "remediation": "Désactiver le compte Administrator intégré et utiliser des comptes nommés avec des privilèges appropriés.",
+    "commands": [
+      "Disable-LocalUser -Name 'Administrator'"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 2.3.1.1"
+    ]
+  },
+  "Guest account": {
+    "severity": "HIGH",
+    "description": "Le compte Guest permet un accès non authentifié au système.",
+    "remediation": "S'assurer que le compte Guest est désactivé (recommandé).",
+    "commands": [
+      "Disable-LocalUser -Name 'Guest'"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 2.3.1.2"
+    ]
+  },
+  "Password minimum length": {
+    "severity": "HIGH",
+    "description": "Les mots de passe courts sont vulnérables aux attaques par force brute.",
+    "remediation": "Configurer une longueur minimale de mot de passe d'au moins 12 caractères.",
+    "commands": [
+      "net accounts /minpwlen:12"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 1.1.1",
+      "ANSSI - Recommandations de sécurité relatives aux mots de passe"
+    ]
+  },
+  "LAPS installation": {
+    "severity": "HIGH",
+    "description": "LAPS (Local Administrator Password Solution) n'est pas installé. Sans LAPS, les mots de passe des administrateurs locaux peuvent être identiques sur plusieurs machines.",
+    "remediation": "Installer et configurer Microsoft LAPS pour gérer automatiquement les mots de passe des comptes administrateurs locaux.",
+    "commands": [
+      "# Télécharger LAPS depuis Microsoft",
+      "# Installer le MSI LAPS",
+      "# Étendre le schéma Active Directory",
+      "Update-AdmPwdADSchema",
+      "# Configurer la GPO pour activer LAPS"
+    ],
+    "references": [
+      "Microsoft LAPS Documentation",
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.2"
+    ]
+  },
+  "UAC (EnableLUA)": {
+    "severity": "HIGH",
+    "description": "Le contrôle de compte d'utilisateur (UAC) protège contre les élévations de privilèges non autorisées.",
+    "remediation": "S'assurer que UAC est activé sur tous les systèmes.",
+    "commands": [
+      "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' -Name 'EnableLUA' -Value 1"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 2.3.17.1"
+    ]
+  },
+  "SMBv1": {
+    "severity": "CRITICAL",
+    "description": "SMBv1 est obsolète et vulnérable à de nombreuses attaques (WannaCry, NotPetya, etc.).",
+    "remediation": "Désactiver complètement SMBv1 et migrer vers SMBv2/SMBv3.",
+    "commands": [
+      "Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart"
+    ],
+    "references": [
+      "Microsoft Security Advisory - Stop using SMB1",
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.3.1"
+    ]
+  },
+  "SMB signing": {
+    "severity": "HIGH",
+    "description": "La signature SMB protège contre les attaques de type Man-in-the-Middle et relay.",
+    "remediation": "Activer la signature SMB obligatoire côté serveur et client.",
+    "commands": [
+      "Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters' -Name 'requiresecuritysignature' -Value 1",
+      "Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters' -Name 'requiresecuritysignature' -Value 1"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 2.3.8.3 et 2.3.9.2"
+    ]
+  },
+  "RDP SecurityLayer": {
+    "severity": "HIGH",
+    "description": "La couche de sécurité RDP doit utiliser TLS pour chiffrer les communications.",
+    "remediation": "Configurer RDP pour utiliser la couche de sécurité TLS (valeur 2).",
+    "commands": [
+      "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name 'SecurityLayer' -Value 2"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.9.60.3.9.1"
+    ]
+  },
+  "RDP NLA": {
+    "severity": "HIGH",
+    "description": "L'authentification au niveau du réseau (NLA) force l'authentification avant l'établissement de la session RDP.",
+    "remediation": "Activer NLA pour toutes les connexions RDP.",
+    "commands": [
+      "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name 'UserAuthentication' -Value 1"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.9.60.3.9.2"
+    ]
+  },
+  "LLMNR": {
+    "severity": "MEDIUM",
+    "description": "LLMNR (Link-Local Multicast Name Resolution) peut être exploité pour des attaques de type credential relay.",
+    "remediation": "Désactiver LLMNR si non nécessaire, privilégier DNS.",
+    "commands": [
+      "New-Item -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Force",
+      "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name 'EnableMulticast' -Value 0"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.5.11.2"
+    ]
+  },
+  "Firewall profile": {
+    "severity": "HIGH",
+    "description": "Le pare-feu Windows doit être activé sur tous les profils réseau.",
+    "remediation": "Activer le pare-feu Windows pour les profils Domain, Private et Public.",
+    "commands": [
+      "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 9.1, 9.2, 9.3"
+    ]
+  },
+  "Service check": {
+    "severity": "MEDIUM",
+    "description": "Certains services peuvent présenter des risques de sécurité s'ils sont actifs sans nécessité.",
+    "remediation": "Désactiver les services non nécessaires (Print Spooler, WebClient, WinHttpAutoProxySvc).",
+    "commands": [
+      "Stop-Service -Name 'Spooler' -Force",
+      "Set-Service -Name 'Spooler' -StartupType Disabled",
+      "Stop-Service -Name 'WebClient' -Force",
+      "Set-Service -Name 'WebClient' -StartupType Disabled"
+    ],
+    "references": [
+      "Microsoft Security Baseline",
+      "PrintNightmare vulnerability (CVE-2021-34527)"
+    ]
+  },
+  "Audit logon/logoff": {
+    "severity": "MEDIUM",
+    "description": "L'audit des connexions permet de détecter les tentatives d'accès non autorisées.",
+    "remediation": "Configurer l'audit des événements de connexion/déconnexion.",
+    "commands": [
+      "auditpol /set /category:'Logon/Logoff' /success:enable /failure:enable"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 17.5"
+    ]
+  },
+  "Security log size": {
+    "severity": "LOW",
+    "description": "Un journal de sécurité trop petit peut perdre des événements importants.",
+    "remediation": "Augmenter la taille maximale du journal de sécurité à au moins 1 GB.",
+    "commands": [
+      "wevtutil sl Security /ms:1073741824"
+    ],
+    "references": [
+      "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 17.1.1"
+    ]
+  },
+  "Sysmon service": {
+    "severity": "INFO",
+    "description": "Sysmon fournit une journalisation détaillée des événements système pour la détection d'intrusion.",
+    "remediation": "Installer Sysmon avec une configuration adaptée pour améliorer la détection des menaces.",
+    "commands": [
+      "# Télécharger Sysmon depuis Microsoft Sysinternals",
+      "# Télécharger une configuration recommandée (ex: SwiftOnSecurity config)",
+      "sysmon64.exe -accepteula -i sysmonconfig.xml"
+    ],
+    "references": [
+      "Microsoft Sysinternals - Sysmon",
+      "SwiftOnSecurity Sysmon Config"
+    ]
+  }
+}

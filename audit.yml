@@ -14,6 +14,7 @@
           task: "Administrator account"
           msg: "{{ 'enabled' if admin_enabled.stdout.strip() == 'True' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if admin_enabled.stdout.strip() == 'True' else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Il est recommandé de désactiver le compte Administrateur par défaut et d'utiliser des comptes nominatifs avec droits maîtrisés (LAPS pour les mots de passe locaux)."
           mitigation_cmd: "Disable-LocalUser -Name 'Administrator'"
 
@@ -27,6 +28,7 @@
           task: "Guest account"
           msg: "{{ 'enabled' if guest_enabled.stdout.strip() == 'True' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if guest_enabled.stdout.strip() == 'True' else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Il est recommandé de désactiver le compte Guest par défaut si non utilisé."
           mitigation_cmd: "Disable-LocalUser -Name 'Guest'"
 
@@ -38,11 +40,12 @@
     - name: Record password policy
       debug:
         msg:
-          task: "Password policy minimum length"
+          task: "Password minimum length"
           msg: "{{ 'FAIL (<12)' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS (>=12)' }}"
           audit_status: "{{ 'FAIL' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Augmentez la longueur minimale des mots de passe (recommandation: 12+ pour utilisateurs, 15+ pour comptes privilégiés)."
-          mitigation_cmd: "secedit /export /cfg C:\\temp\\secpol.cfg && (modifier LocalPolicies\\SecurityOptions ou GPO selon le contexte)"
+          mitigation_cmd: "net accounts /minpwlen:12"
 
     # --- LAPS installation ---
     - name: Check LAPS installation
@@ -61,8 +64,9 @@
           task: "LAPS installation"
           msg: "{{ 'installed' if laps_present.stdout.strip() == 'True' else 'not installed' }}"
           audit_status: "{{ 'PASS' if laps_present.stdout.strip() == 'True' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Installer et déployer Microsoft LAPS pour gérer automatiquement les mots de passe des comptes administrateurs locaux."
-          mitigation_cmd: "Install-Module -Name LAPS -Force # ou déployer l'installateur MSI Microsoft LAPS"
+          mitigation_cmd: "Install-Module -Name LAPS -Force"
 
     # --- UAC ---
     - name: Check UAC (EnableLUA)
@@ -75,6 +79,7 @@
           task: "UAC (EnableLUA)"
           msg: "{{ 'enabled' if uac.stdout.strip() == '1' else 'disabled' }}"
           audit_status: "{{ 'PASS' if uac.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer l'UAC pour réduire la surface d'exécution avec privilèges élevés."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' -Name EnableLUA -Value 1"
 
@@ -89,6 +94,7 @@
           task: "SMBv1"
           msg: "{{ 'enabled' if smb1.stdout.strip() == 'Enabled' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if smb1.stdout.strip() == 'Enabled' else 'PASS' }}"
+          severity: "CRITICAL"
           mitigation_advice: "Désactiver SMBv1, obsolète et vulnérable."
           mitigation_cmd: "Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart"
 
@@ -103,6 +109,7 @@
           task: "SMB signing"
           msg: "{{ 'required' if smb_sig.stdout.strip() == '1' else 'not required' }}"
           audit_status: "{{ 'PASS' if smb_sig.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Forcer la signature SMB côté serveur pour se protéger contre le relay NTLM."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters' -Name requiresecuritysignature -Value 1"
 
@@ -117,6 +124,7 @@
           task: "RDP SecurityLayer"
           msg: "{{ 'TLS (2)' if rdp_sec.stdout.strip() == '2' else 'not TLS' }}"
           audit_status: "{{ 'PASS' if rdp_sec.stdout.strip() == '2' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Configurer SecurityLayer à 2 pour forcer TLS pour RDP."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name SecurityLayer -Value 2"
 
@@ -130,6 +138,7 @@
           task: "RDP NLA"
           msg: "{{ 'enabled' if rdp_nla.stdout.strip() == '1' else 'not enabled' }}"
           audit_status: "{{ 'PASS' if rdp_nla.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer NLA pour protéger le service RDP."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name UserAuthentication -Value 1"
 
@@ -153,6 +162,7 @@
           { "task": "Service {{ item_val.split(':')[0] }}",
             "msg": "{{ item_val }}",
             "audit_status": "{{ 'FAIL' if ':Running' in item_val else 'PASS' if ':Stopped' in item_val else 'INFO' }}",
+            "severity": "MEDIUM",
             "mitigation_advice": "Évaluer la nécessité du service et désactiver s'il n'est pas requis sur ce rôle serveur.",
             "mitigation_cmd": "Set-Service -Name '{{ item_val.split(':')[0] }}' -StartupType Disabled; Stop-Service -Name '{{ item_val.split(':')[0] }}'"
           }
@@ -169,6 +179,7 @@
           task: "Firewall profile"
           msg: "{{ item }}"
           audit_status: "{{ 'PASS' if ':True' in item else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer le pare-feu pour le profil concerné et vérifier les règles."
           mitigation_cmd: "Set-NetFirewallProfile -Profile {{ item.split(':')[0] }} -Enabled True"
       loop: "{{ firewall_profiles.stdout_lines }}"
@@ -184,6 +195,7 @@
           task: "LLMNR"
           msg: "{{ 'disabled' if llmnr.stdout.strip() == '0' else 'enabled' }}"
           audit_status: "{{ 'PASS' if llmnr.stdout.strip() == '0' else 'FAIL' }}"
+          severity: "MEDIUM"
           mitigation_advice: "Désactiver LLMNR via GPO pour prévenir le spoofing."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name EnableMulticast -Value 0"
 
@@ -198,8 +210,9 @@
           task: "Audit logon/logoff"
           msg: "{{ 'configured' if audit_policy.stdout != '' else 'not configured' }}"
           audit_status: "{{ 'PASS' if audit_policy.stdout != '' else 'FAIL' }}"
+          severity: "MEDIUM"
           mitigation_advice: "Configurer l'audit pour succès et échecs sur logon/logoff via GPO."
-          mitigation_cmd: "auditpol /set /subcategory:\"Logon/Logoff\" /success:enable /failure:enable"
+          mitigation_cmd: "auditpol /set /category:'Logon/Logoff' /success:enable /failure:enable"
 
     # --- Security log size ---
     - name: Check security log max size
@@ -212,8 +225,9 @@
           task: "Security log size"
           msg: "{{ '>=1GB' if sec_log_size.stdout|int >= 1024 else '<1GB' }}"
           audit_status: "{{ 'PASS' if sec_log_size.stdout|int >= 1024 else 'WARNING' }}"
+          severity: "LOW"
           mitigation_advice: "Augmenter la taille du journal de sécurité pour éviter la perte d'événements."
-          mitigation_cmd: "Limit via GPO or use wevtutil sl Security /ms:1073741824"
+          mitigation_cmd: "wevtutil sl Security /ms:1073741824"
 
     # --- Sysmon service ---
     - name: Check Sysmon service
@@ -232,5 +246,6 @@
           task: "Sysmon service"
           msg: "{{ 'installed' if sysmon_status.stdout.strip() == 'installed' else 'not installed' }}"
           audit_status: "{{ 'PASS' if sysmon_status.stdout.strip() == 'installed' else 'INFO' }}"
+          severity: "INFO"
           mitigation_advice: "Installer Sysmon pour une meilleure journalisation si nécessaire."
-          mitigation_cmd: "Install-Sysmon -accepteula -i sysmon-config.xml"
+          mitigation_cmd: "sysmon64.exe -accepteula -i sysmonconfig.xml"
