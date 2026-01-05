@@ -14,6 +14,7 @@
           task: "Administrator account"
           msg: "{{ 'enabled' if admin_enabled.stdout.strip() == 'True' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if admin_enabled.stdout.strip() == 'True' else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Il est recommandé de désactiver le compte Administrateur par défaut et d'utiliser des comptes nominatifs avec droits maîtrisés (LAPS pour les mots de passe locaux)."
           mitigation_cmd: "Disable-LocalUser -Name 'Administrator'"
 
@@ -27,6 +28,7 @@
           task: "Guest account"
           msg: "{{ 'enabled' if guest_enabled.stdout.strip() == 'True' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if guest_enabled.stdout.strip() == 'True' else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Il est recommandé de désactiver le compte Guest par défaut si non utilisé."
           mitigation_cmd: "Disable-LocalUser -Name 'Guest'"
 
@@ -38,11 +40,12 @@
     - name: Record password policy
       debug:
         msg:
-          task: "Password policy minimum length"
+          task: "Password minimum length"
           msg: "{{ 'FAIL (<12)' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS (>=12)' }}"
           audit_status: "{{ 'FAIL' if (password_length.stdout.split(':')[-1] | int) < 12 else 'PASS' }}"
+          severity: "HIGH"
           mitigation_advice: "Augmentez la longueur minimale des mots de passe (recommandation: 12+ pour utilisateurs, 15+ pour comptes privilégiés)."
-          mitigation_cmd: "secedit /export /cfg C:\\temp\\secpol.cfg && (modifier LocalPolicies\\SecurityOptions ou GPO selon le contexte)"
+          mitigation_cmd: "net accounts /minpwlen:12"
 
     # --- LAPS installation ---
     - name: Check LAPS installation
@@ -61,8 +64,9 @@
           task: "LAPS installation"
           msg: "{{ 'installed' if laps_present.stdout.strip() == 'True' else 'not installed' }}"
           audit_status: "{{ 'PASS' if laps_present.stdout.strip() == 'True' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Installer et déployer Microsoft LAPS pour gérer automatiquement les mots de passe des comptes administrateurs locaux."
-          mitigation_cmd: "Install-Module -Name LAPS -Force # ou déployer l'installateur MSI Microsoft LAPS"
+          mitigation_cmd: "Install-Module -Name LAPS -Force"
 
     # --- UAC ---
     - name: Check UAC (EnableLUA)
@@ -75,6 +79,7 @@
           task: "UAC (EnableLUA)"
           msg: "{{ 'enabled' if uac.stdout.strip() == '1' else 'disabled' }}"
           audit_status: "{{ 'PASS' if uac.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer l'UAC pour réduire la surface d'exécution avec privilèges élevés."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' -Name EnableLUA -Value 1"
 
@@ -89,6 +94,7 @@
           task: "SMBv1"
           msg: "{{ 'enabled' if smb1.stdout.strip() == 'Enabled' else 'disabled' }}"
           audit_status: "{{ 'FAIL' if smb1.stdout.strip() == 'Enabled' else 'PASS' }}"
+          severity: "CRITICAL"
           mitigation_advice: "Désactiver SMBv1, obsolète et vulnérable."
           mitigation_cmd: "Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart"
 
@@ -103,6 +109,7 @@
           task: "SMB signing"
           msg: "{{ 'required' if smb_sig.stdout.strip() == '1' else 'not required' }}"
           audit_status: "{{ 'PASS' if smb_sig.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Forcer la signature SMB côté serveur pour se protéger contre le relay NTLM."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters' -Name requiresecuritysignature -Value 1"
 
@@ -117,6 +124,7 @@
           task: "RDP SecurityLayer"
           msg: "{{ 'TLS (2)' if rdp_sec.stdout.strip() == '2' else 'not TLS' }}"
           audit_status: "{{ 'PASS' if rdp_sec.stdout.strip() == '2' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Configurer SecurityLayer à 2 pour forcer TLS pour RDP."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name SecurityLayer -Value 2"
 
@@ -130,6 +138,7 @@
           task: "RDP NLA"
           msg: "{{ 'enabled' if rdp_nla.stdout.strip() == '1' else 'not enabled' }}"
           audit_status: "{{ 'PASS' if rdp_nla.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer NLA pour protéger le service RDP."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name UserAuthentication -Value 1"
 
@@ -153,6 +162,7 @@
           { "task": "Service {{ item_val.split(':')[0] }}",
             "msg": "{{ item_val }}",
             "audit_status": "{{ 'FAIL' if ':Running' in item_val else 'PASS' if ':Stopped' in item_val else 'INFO' }}",
+            "severity": "MEDIUM",
             "mitigation_advice": "Évaluer la nécessité du service et désactiver s'il n'est pas requis sur ce rôle serveur.",
             "mitigation_cmd": "Set-Service -Name '{{ item_val.split(':')[0] }}' -StartupType Disabled; Stop-Service -Name '{{ item_val.split(':')[0] }}'"
           }
@@ -169,6 +179,7 @@
           task: "Firewall profile"
           msg: "{{ item }}"
           audit_status: "{{ 'PASS' if ':True' in item else 'FAIL' }}"
+          severity: "HIGH"
           mitigation_advice: "Activer le pare-feu pour le profil concerné et vérifier les règles."
           mitigation_cmd: "Set-NetFirewallProfile -Profile {{ item.split(':')[0] }} -Enabled True"
       loop: "{{ firewall_profiles.stdout_lines }}"
@@ -184,6 +195,7 @@
           task: "LLMNR"
           msg: "{{ 'disabled' if llmnr.stdout.strip() == '0' else 'enabled' }}"
           audit_status: "{{ 'PASS' if llmnr.stdout.strip() == '0' else 'FAIL' }}"
+          severity: "MEDIUM"
           mitigation_advice: "Désactiver LLMNR via GPO pour prévenir le spoofing."
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name EnableMulticast -Value 0"
 
@@ -198,8 +210,9 @@
           task: "Audit logon/logoff"
           msg: "{{ 'configured' if audit_policy.stdout != '' else 'not configured' }}"
           audit_status: "{{ 'PASS' if audit_policy.stdout != '' else 'FAIL' }}"
+          severity: "MEDIUM"
           mitigation_advice: "Configurer l'audit pour succès et échecs sur logon/logoff via GPO."
-          mitigation_cmd: "auditpol /set /subcategory:\"Logon/Logoff\" /success:enable /failure:enable"
+          mitigation_cmd: "auditpol /set /category:'Logon/Logoff' /success:enable /failure:enable"
 
     # --- Security log size ---
     - name: Check security log max size
@@ -212,8 +225,9 @@
           task: "Security log size"
           msg: "{{ '>=1GB' if sec_log_size.stdout|int >= 1024 else '<1GB' }}"
           audit_status: "{{ 'PASS' if sec_log_size.stdout|int >= 1024 else 'WARNING' }}"
+          severity: "LOW"
           mitigation_advice: "Augmenter la taille du journal de sécurité pour éviter la perte d'événements."
-          mitigation_cmd: "Limit via GPO or use wevtutil sl Security /ms:1073741824"
+          mitigation_cmd: "wevtutil sl Security /ms:1073741824"
 
     # --- Sysmon service ---
     - name: Check Sysmon service
@@ -232,5 +246,396 @@
           task: "Sysmon service"
           msg: "{{ 'installed' if sysmon_status.stdout.strip() == 'installed' else 'not installed' }}"
           audit_status: "{{ 'PASS' if sysmon_status.stdout.strip() == 'installed' else 'INFO' }}"
+          severity: "INFO"
           mitigation_advice: "Installer Sysmon pour une meilleure journalisation si nécessaire."
-          mitigation_cmd: "Install-Sysmon -accepteula -i sysmon-config.xml"
+          mitigation_cmd: "sysmon64.exe -accepteula -i sysmonconfig.xml"
+
+    # --- BLOC 1 : Protection des identifiants (Credential Guard / LSASS) ---
+    - name: Check LSASS RunAsPPL
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -Name "RunAsPPL" -ErrorAction SilentlyContinue).RunAsPPL'
+      register: lsass_ppl
+
+    - name: Record LSASS Protection
+      debug:
+        msg:
+          task: "LSASS RunAsPPL"
+          msg: "{{ 'enabled' if lsass_ppl.stdout.strip() == '1' else 'disabled' }}"
+          audit_status: "{{ 'PASS' if lsass_ppl.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "CRITICAL"
+          mitigation_advice: "Activer la protection LSA pour empêcher l'injection de code (Mimikatz). RunAsPPL force LSASS à s'exécuter en mode Protected Process Light."
+          mitigation_cmd: "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RunAsPPL -Value 1 -PropertyType DWORD -Force"
+
+    - name: Check WDigest (Cleartext Passwords)
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest" -Name "UseLogonCredential" -ErrorAction SilentlyContinue).UseLogonCredential'
+      register: wdigest
+
+    - name: Record WDigest status
+      debug:
+        msg:
+          task: "WDigest (Cleartext Passwords)"
+          msg: "{{ 'disabled' if wdigest.stdout.strip() == '0' else 'enabled/default' }}"
+          audit_status: "{{ 'PASS' if wdigest.stdout.strip() == '0' else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Désactiver WDigest pour éviter le stockage de mots de passe en clair en mémoire (attaques post-exploitation)."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest' -Name UseLogonCredential -Value 0"
+
+    # --- BLOC 2 : NetBIOS over TCP/IP ---
+    - name: Check NetBIOS NoNameReleaseOnDemand
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters" -Name "NoNameReleaseOnDemand" -ErrorAction SilentlyContinue).NoNameReleaseOnDemand'
+      register: netbios_check
+
+    - name: Record NetBIOS status
+      debug:
+        msg:
+          task: "NetBIOS (NoNameReleaseOnDemand)"
+          msg: "{{ 'restricted' if netbios_check.stdout.strip() == '1' else 'default' }}"
+          audit_status: "{{ 'PASS' if netbios_check.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Restreindre NetBIOS pour éviter les attaques de type spoofing/NBT-NS poisoning (interception WPAD)."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters' -Name NoNameReleaseOnDemand -Value 1"
+
+    # --- BLOC 3 : Windows Defender & AppLocker ---
+    - name: Check Windows Defender RealTime Protection
+      win_shell: '(Get-MpPreference).DisableRealtimeMonitoring'
+      register: defender_rt
+
+    - name: Record Defender RealTime status
+      debug:
+        msg:
+          task: "Defender RealTime Protection"
+          msg: "{{ 'enabled' if defender_rt.stdout.strip() == 'False' else 'disabled' }}"
+          audit_status: "{{ 'PASS' if defender_rt.stdout.strip() == 'False' else 'FAIL' }}"
+          severity: "CRITICAL"
+          mitigation_advice: "Activer la protection en temps réel de Windows Defender pour détecter les malwares à l'exécution."
+          mitigation_cmd: "Set-MpPreference -DisableRealtimeMonitoring $false"
+
+    - name: Check AppLocker Effective Policy
+      win_shell: '(Get-AppLockerPolicy -Effective -ErrorAction SilentlyContinue).RuleCollections.Count'
+      register: applocker_rules
+
+    - name: Record AppLocker status
+      debug:
+        msg:
+          task: "AppLocker Rules"
+          msg: "{{ 'Active (' + (applocker_rules.stdout.strip() | default('0')) + ' collections)' if (applocker_rules.stdout.strip() | default('0')) | int > 0 else 'No rules enforced' }}"
+          audit_status: "{{ 'PASS' if (applocker_rules.stdout.strip() | default('0')) | int > 0 else 'WARNING' }}"
+          severity: "HIGH"
+          mitigation_advice: "Définir des règles AppLocker pour contrôler l'exécution des binaires et scripts (whitelist par défaut)."
+          mitigation_cmd: "New-AppLockerPolicy -RuleType Exe,Msi,Script,Dll -User Everyone -RuleNamePrefix 'Default' -Force"
+
+    # --- BLOC 4 : Cache des sessions (Cached Logons) ---
+    - name: Check Cached Logons Count
+      win_shell: '(Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "CachedLogonsCount" -ErrorAction SilentlyContinue).CachedLogonsCount'
+      register: cached_logons
+
+    - name: Record Cached Logons
+      debug:
+        msg:
+          task: "Cached Logons Count"
+          msg: "{{ cached_logons.stdout.strip() | default('not found') }}"
+          audit_status: "{{ 'PASS' if (cached_logons.stdout.strip() | default('999') | int) <= 2 else 'FAIL' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Réduire le nombre de sessions en cache (0-2) pour limiter l'extraction de hash MSCache2 par les attaquants en cas de compromission offline."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon' -Name CachedLogonsCount -Value 1"
+
+    # --- BLOC 5 : WinRM & RDP - Administration à distance sécurisée ---
+    - name: Check WinRM Basic Auth & Encryption
+      win_shell: |
+        $basic = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" -Name "AllowBasic" -ErrorAction SilentlyContinue).AllowBasic
+        $unenc = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" -Name "AllowUnencryptedTraffic" -ErrorAction SilentlyContinue).AllowUnencryptedTraffic
+        if ($basic -eq 0 -and $unenc -eq 0) { Write-Output "Secure" } else { Write-Output "Insecure" }
+      register: winrm_sec
+
+    - name: Record WinRM Status
+      debug:
+        msg:
+          task: "WinRM Hardening"
+          msg: "{{ winrm_sec.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if winrm_sec.stdout.strip() == 'Secure' else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Désactiver l'authentification Basic et le trafic non chiffré pour WinRM pour éviter les attaques Man-In-The-Middle."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Service' -Name AllowBasic -Value 0; Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Service' -Name AllowUnencryptedTraffic -Value 0"
+
+    - name: Check RDP MinEncryptionLevel
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MinEncryptionLevel" -ErrorAction SilentlyContinue).MinEncryptionLevel'
+      register: rdp_enc
+
+    - name: Record RDP Encryption Level
+      debug:
+        msg:
+          task: "RDP Encryption Level"
+          msg: "{{ 'High/FIPS' if (rdp_enc.stdout.strip() | default('0') | int) >= 3 else 'Low' }}"
+          audit_status: "{{ 'PASS' if (rdp_enc.stdout.strip() | default('0') | int) >= 3 else 'WARNING' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Régler le niveau de chiffrement RDP à 3 (High) ou 4 (FIPS) pour protéger les sessions RDP."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name MinEncryptionLevel -Value 3"
+
+    # --- BLOC 6 : Protection contre les Exploits (ASR & Controlled Folder Access) ---
+    - name: Check ASR Rules Status
+      win_shell: '(Get-MpPreference).AttackSurfaceReductionRules_Actions'
+      register: asr_rules
+
+    - name: Record ASR Status
+      debug:
+        msg:
+          task: "ASR Rules (Exploit Guard)"
+          msg: "{{ 'Configured' if (asr_rules.stdout.strip() | default('')) != '' and ('1' in asr_rules.stdout or '2' in asr_rules.stdout) else 'Not Configured' }}"
+          audit_status: "{{ 'PASS' if (asr_rules.stdout.strip() | default('')) != '' and ('1' in asr_rules.stdout or '2' in asr_rules.stdout) else 'WARNING' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Activer les règles de réduction de surface d'attaque (ASR) via GPO ou PowerShell pour bloquer les techniques d'exploitation courantes."
+          mitigation_cmd: "Set-MpPreference -AttackSurfaceReductionRules_Actions Enabled"
+
+    - name: Check Controlled Folder Access
+      win_shell: '(Get-MpPreference).EnableControlledFolderAccess'
+      register: folder_access
+
+    - name: Record Ransomware Protection
+      debug:
+        msg:
+          task: "Controlled Folder Access"
+          msg: "{{ 'Enabled' if folder_access.stdout.strip() == '1' else 'Disabled' }}"
+          audit_status: "{{ 'PASS' if folder_access.stdout.strip() == '1' else 'INFO' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Activer la protection des dossiers contrôlés pour bloquer les attaques ransomware et les modifications non autorisées."
+          mitigation_cmd: "Set-MpPreference -EnableControlledFolderAccess Enabled"
+
+    # --- BLOC 7 : Sécurité Physique et Périphériques (BitLocker & USB) ---
+    - name: Check USB AutoRun (NoDriveTypeAutoRun)
+      win_shell: |
+        $val = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -ErrorAction SilentlyContinue).NoDriveTypeAutoRun
+        if ($val -eq 255 -or $val -eq 221) { Write-Output "Secure" } else { Write-Output "Insecure" }
+      register: autorun_check
+
+    - name: Record USB AutoRun
+      debug:
+        msg:
+          task: "USB AutoRun"
+          msg: "{{ autorun_check.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if autorun_check.stdout.strip() == 'Secure' else 'FAIL' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Désactiver l'exécution automatique pour tous les lecteurs pour prévenir les attaques par USB malveillants."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer' -Name NoDriveTypeAutoRun -Value 255"
+
+    - name: Check BitLocker on C drive
+      win_shell: |
+        try {
+          $status = (Get-BitLockerVolume -MountPoint "C:" -ErrorAction Stop).ProtectionStatus
+          Write-Output $status
+        } catch {
+          Write-Output "Not installed"
+        }
+      register: bitlocker_status
+
+    - name: Record BitLocker Status
+      debug:
+        msg:
+          task: "BitLocker C:"
+          msg: "{{ 'On' if bitlocker_status.stdout.strip() == 'On' else 'Off/Not installed' }}"
+          audit_status: "{{ 'PASS' if bitlocker_status.stdout.strip() == 'On' else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Activer BitLocker sur le disque système pour chiffrer les données au repos et protéger contre le vol de données physiques."
+          mitigation_cmd: "Enable-BitLocker -MountPoint 'C:' -EncryptionMethod Aes256"
+
+    # --- BLOC 8 : Contrôle des Scripts (PowerShell Language Mode) ---
+    - name: Check PowerShell Language Mode
+      win_shell: '$ExecutionContext.SessionState.LanguageMode'
+      register: ps_mode
+
+    - name: Record PowerShell Language Mode
+      debug:
+        msg:
+          task: "PowerShell Language Mode"
+          msg: "{{ ps_mode.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if ps_mode.stdout.strip() == 'ConstrainedLanguage' else 'INFO' }}"
+          severity: "LOW"
+          mitigation_advice: "Envisager le mode ConstrainedLanguage pour les utilisateurs standards via AppLocker ou WDAC pour bloquer les scripts malveillants avancés."
+          mitigation_cmd: "# Configuration via AppLocker ou WDAC - ne peut pas être changé directement"
+
+    # --- BLOC 9 : SMB Client Signing (Protection côté client) ---
+    - name: Check SMB Client Signing
+      win_shell: '(Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "RequireSecuritySignature" -ErrorAction SilentlyContinue).RequireSecuritySignature'
+      register: smb_client_sig
+
+    - name: Record SMB Client Signing
+      debug:
+        msg:
+          task: "SMB Client Signing"
+          msg: "{{ 'Required' if smb_client_sig.stdout.strip() == '1' else 'Not Required' }}"
+          audit_status: "{{ 'PASS' if smb_client_sig.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Forcer la signature SMB côté client (LanmanWorkstation) pour empêcher que la machine ne serve de relais dans les attaques de replay/relay NTLM."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters' -Name RequireSecuritySignature -Value 1"
+
+    # --- BLOC 10 : Journalisation Avancée PowerShell (Script Block Logging) ---
+    - name: Check PowerShell Script Block Logging
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -Name "EnableScriptBlockLogging" -ErrorAction SilentlyContinue).EnableScriptBlockLogging'
+      register: ps_logging
+
+    - name: Record PowerShell Logging
+      debug:
+        msg:
+          task: "PowerShell Script Block Logging"
+          msg: "{{ 'Enabled' if ps_logging.stdout.strip() == '1' else 'Disabled' }}"
+          audit_status: "{{ 'PASS' if ps_logging.stdout.strip() == '1' else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Activer la journalisation des blocs de scripts PowerShell pour auditer les commandes exécutées, même offusquées."
+          mitigation_cmd: "New-Item -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Force; Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1"
+
+    # --- BLOC 11 : Sécurité WSUS (Windows Update) ---
+    - name: Check WSUS Server HTTPS
+      win_shell: |
+        $wuserver = (Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "WUServer" -ErrorAction SilentlyContinue).WUServer
+        if ($null -eq $wuserver) { 
+            Write-Output "Direct Microsoft Update" 
+        } elseif ($wuserver -like "https://*") { 
+            Write-Output "Secure (HTTPS)" 
+        } else { 
+            Write-Output "Insecure (HTTP)" 
+        }
+      register: wsus_check
+
+    - name: Record WSUS Security
+      debug:
+        msg:
+          task: "WSUS Configuration"
+          msg: "{{ wsus_check.stdout.strip() }}"
+          audit_status: "{{ 'FAIL' if 'Insecure' in wsus_check.stdout else 'PASS' }}"
+          severity: "HIGH"
+          mitigation_advice: "Si un serveur WSUS est utilisé, il DOIT être configuré en HTTPS pour éviter l'injection de fausses mises à jour."
+          mitigation_cmd: "Configurer le serveur WSUS pour utiliser SSL/TLS et mettre à jour la GPO."
+
+    # --- BLOC 12 : Virtualization Based Security (VBS) ---
+    - name: Check VBS Status
+      win_shell: |
+        try {
+            $vbs = (Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard -ErrorAction Stop).SecurityServicesRunning
+            if ($vbs -contains 1) { Write-Output "Running" } else { Write-Output "Not Running" }
+        } catch { Write-Output "Not Compatible/Not Found" }
+      register: vbs_status
+
+    - name: Record VBS Status
+      debug:
+        msg:
+          task: "Virtualization Based Security (Credential Guard)"
+          msg: "{{ vbs_status.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if vbs_status.stdout.strip() == 'Running' else 'INFO' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Activer VBS et Credential Guard si le matériel le supporte (nécessite CPU avec virtualisation + TPM)."
+          mitigation_cmd: "Activer via GPO: Configuration Ordinateur > Système > Device Guard > Activer la sécurité basée sur la virtualisation."
+
+    # --- BLOC 13 : Local Admin Group Members ---
+    - name: Audit Local Admin Group Members
+      win_shell: "Get-LocalGroupMember -Group 'Administrateurs' | Select-Object -ExpandProperty Name"
+      register: admin_members
+
+    - name: Record Local Admins
+      debug:
+        msg:
+          task: "Local Admin Group Members"
+          msg: "{{ admin_members.stdout }}"
+          audit_status: "PASS"
+          severity: "MEDIUM"
+          mitigation_advice: "Auditer régulièrement les membres du groupe Administrateurs et supprimer les comptes inutilisés. Utiliser LAPS pour gérer les comptes locaux."
+          mitigation_cmd: "Get-LocalGroupMember -Group 'Administrateurs'"
+
+    # --- BLOC 14 : IPv6 Status Check ---
+    - name: Check IPv6 Status
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" -Name "DisabledComponents" -ErrorAction SilentlyContinue).DisabledComponents'
+      register: ipv6_status
+
+    - name: Record IPv6 Status
+      debug:
+        msg:
+          task: "IPv6 Status"
+          msg: "{{ 'Disabled' if ipv6_status.stdout.strip() == '255' else 'Enabled (Default)' }}"
+          audit_status: "{{ 'PASS' if ipv6_status.stdout.strip() == '255' else 'INFO' }}"
+          severity: "LOW"
+          mitigation_advice: "Si IPv6 n'est pas utilisé, le désactiver via la clé DisabledComponents (valeur 0xFF/255) pour réduire la surface d'attaque."
+          mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters' -Name DisabledComponents -Value 255"
+
+    # --- BLOC 15 : Windows Event Forwarding (WEF) ---
+    - name: Check WEF Subscription
+      win_shell: '(Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\EventLog\EventForwarding\SubscriptionManager" -Name "1" -ErrorAction SilentlyContinue)."1"'
+      register: wef_check
+
+    - name: Record WEF Status
+      debug:
+        msg:
+          task: "Windows Event Forwarding (WEF)"
+          msg: "{{ 'Configured' if wef_check.stdout.strip() != '' else 'Not Configured' }}"
+          audit_status: "{{ 'PASS' if wef_check.stdout.strip() != '' else 'FAIL' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Configurer WEF pour centraliser les journaux sur un serveur de logs centralisé (SIEM). Cela permet une meilleure détection d'incidents et conformité."
+          mitigation_cmd: "# Configuration via GPO ou WEF Subscription Manager"
+
+    # --- Potentially dangerous services (Updated list) ---
+    - name: Check dangerous services
+      win_shell: |
+        $services = @("WinHttpAutoProxySvc", "WebClient", "Spooler", "DiagTrack", "Dmwappushservice", "XblAuthManager", "XblGameSave", "XboxNetApiSvc")
+        foreach ($svc in $services) {
+          try {
+            $s = Get-Service -Name $svc -ErrorAction Stop
+            if ($s.Status -eq "Running") { Write-Output "$svc`:Running" }
+            else { Write-Output "$svc`:Stopped" }
+          } catch { Write-Output "$svc`:NotInstalled" }
+        }
+      register: dangerous_services
+
+    # --- BLOC 16 : Inventaire Logiciel (Vulnerable Software) ---
+    - name: Check installed software versions
+      win_shell: |
+        $apps = @()
+        # Récupérer les apps x64
+        Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
+          Where-Object { $_.DisplayName } | ForEach-Object { $apps += $_.DisplayName + " (v" + $_.DisplayVersion + ")" }
+        # Récupérer les apps x86
+        Get-ItemProperty "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
+          Where-Object { $_.DisplayName } | ForEach-Object { $apps += $_.DisplayName + " (v" + $_.DisplayVersion + ")" }
+        if ($apps.Count -gt 0) { 
+          $apps | Sort-Object -Unique | ForEach-Object { Write-Output $_ }
+        } else { 
+          Write-Output "No software detected" 
+        }
+      register: installed_software
+
+    - name: Record Software Inventory
+      debug:
+        msg:
+          task: "Installed Software Inventory"
+          msg: "{{ installed_software.stdout if installed_software.stdout.strip() else 'No software found' }}"
+          audit_status: "INFO"
+          severity: "MEDIUM"
+          mitigation_advice: "Audit complet de tous les logiciels installés. Vérifier les versions des logiciels critiques (Java, Adobe, navigateurs, etc.). Maintenir à jour et appliquer les patches rapidement, particulièrement pour les logiciels côté client souvent exploités."
+          mitigation_cmd: "# Mettre à jour via Windows Update, WSUS ou les outils spécifiques des éditeurs"
+
+    # --- BLOC 17 : Permissions sur les Services Critiques ---
+    - name: Check service registry permissions
+      win_shell: |
+        $criticalServices = @("BITS", "Spooler", "UpdateOrchestrator", "WinRM", "lsass")
+        foreach ($svc in $criticalServices) {
+          try {
+            $regPath = "HKLM:\System\CurrentControlSet\Services\$svc"
+            $acl = Get-Acl -Path $regPath -ErrorAction Stop
+            # Vérifier si des utilisateurs standard ont des droits écriture
+            $hasRisk = $false
+            foreach ($access in $acl.Access) {
+              if ($access.IdentityReference -like "*Users*" -and ($access.FileSystemRights -match "Write|Modify|FullControl")) {
+                $hasRisk = $true
+                Write-Output "$svc`:RISKY_PERMISSIONS"
+                break
+              }
+            }
+            if (-not $hasRisk) { Write-Output "$svc`:Secure" }
+          } catch { Write-Output "$svc`:Error/NotFound" }
+        }
+      register: service_perms
+
+    - name: Record Service Permissions
+      debug:
+        msg:
+          task: "Service Registry Permissions"
+          msg: "{{ service_perms.stdout }}"
+          audit_status: "{{ 'FAIL' if 'RISKY_PERMISSIONS' in service_perms.stdout else 'PASS' }}"
+          severity: "HIGH"
+          mitigation_advice: "Les services critiques ne doivent être modifiables que par SYSTEM et Administrateurs. Supprimer les droits Write/Modify pour le groupe Users ou Utilisateurs authentifiés sur les clés de registre des services."
+          mitigation_cmd: "# Utiliser icacls ou Set-Acl pour corriger les permissions. Exemple: icacls 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Spooler' /grant:r 'SYSTEM:(F)' /grant:r 'Admins:(F)' /remove 'Users'"
