@@ -124,13 +124,7 @@ def generate_applications_section(task_data):
     for line in lines:
         if isinstance(line, str):
             line = line.strip()
-            if 'InstalledApplications:Count=' in line:
-                try:
-                    app_count = line.split('=')[1].strip()
-                except:
-                    pass
-            elif '|' in line and '=' not in line and ('Arch:' in line or 'Publisher:' in line):
-                apps.append(line)
+            apps.append(line)
     
     if not apps:
         return '<p style="color: #f59e0b;">⚠️ Aucune application trouvée dans les données. Le système peut ne pas avoir d\'applications installées via Windows Installer ou l\'accès au registre a échoué.</p>'
@@ -896,3 +890,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
