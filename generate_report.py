@@ -45,23 +45,104 @@ def get_severity_color(severity):
     return colors.get(severity, '#6c757d')
 
 
+def get_enhanced_section(task_name, task_data):
+    """Retourne un contenu HTML enrichi pour certaines tâches"""
+    enhanced = {}
+    
+    # Section WinRM enrichie
+    if 'WinRM' in task_name:
+        enhanced['title'] = '🔐 Configuration WinRM - Authentification et Chiffrement'
+        enhanced['details'] = '''
+        <div style="background: #f0f9ff; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Modes d'authentification disponibles :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>Basic</code> - ❌ À éviter (identifiants en clair)</li>
+                <li><code>Certificate</code> - ✓ Recommandé</li>
+                <li><code>Negotiate (NTLM et Kerberos)</code> - ✓ Recommandé</li>
+                <li><code>Kerberos</code> - ✓ Recommandé</li>
+                <li><code>CredSSP</code> - ⚠️ À configurer avec prudence</li>
+            </ul>
+            <strong>Clés de registre critiques :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Service\\AllowBasic</code> = 0</li>
+                <li><code>HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Service\\AllowUnencryptedTraffic</code> = 0</li>
+                <li><code>HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Client\\AllowBasic</code> = 0</li>
+                <li><code>HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WinRM\\Client\\AllowUnencryptedTraffic</code> = 0</li>
+            </ul>
+        </div>'''
+    
+    # Section SMB enrichie
+    elif 'SMB' in task_name and ('signing' in task_name.lower() or 'client' in task_name.lower()):
+        enhanced['title'] = '🔒 Configuration SMB - Signatures et Sécurité'
+        enhanced['details'] = '''
+        <div style="background: #fef3c7; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Paramètres de signature SMB (Serveur) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres de signature SMB (Client) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\\System\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres NTLM (Relais NTLM) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters\\RestrictNullSessAccess = 1</code></li>
+                <li><code>HKLM:\\System\\CurrentControlSet\\Services\\LanmanServer\\Parameters\\NullSessionPipes</code> = (vide)</li>
+            </ul>
+        </div>'''
+    
+    # Section BIOS enrichie
+    elif 'BIOS' in task_name or 'UEFI' in task_name:
+        enhanced['title'] = '🖥️ Sécurité Physique - Protection BIOS/UEFI'
+        enhanced['details'] = '''
+        <div style="background: #fee2e2; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Points de contrôle BIOS/UEFI :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>✓ <strong>Mot de passe administrateur BIOS</strong> - Activé et complexe</li>
+                <li>✓ <strong>Mot de passe utilisateur BIOS</strong> - Activé (optionnel mais recommandé)</li>
+                <li>✓ <strong>Secure Boot</strong> - Activé (UEFI)</li>
+                <li>✓ <strong>TPM (Trusted Platform Module)</strong> - Activé et initialisé</li>
+                <li>✓ <strong>Virtualization / VT-x / AMD-V</strong> - Activé si utilisé (Hyper-V, etc.)</li>
+                <li>✓ <strong>Ordre de démarrage</strong> - Correctement configuré (disque dur en premier)</li>
+                <li>⚠️ <strong>USB Boot</strong> - Désactiver si non utilisé</li>
+                <li>⚠️ <strong>Legacy Boot / CSM</strong> - Désactiver si UEFI supporté</li>
+            </ul>
+            <strong>Vérification manuelle requise :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>Redémarrer et entrer au BIOS (Delete, F2, F12 selon le fabricant)</li>
+                <li>Vérifier que le mot de passe administrateur est bien défini</li>
+                <li>Confirmer les paramètres de sécurité (Secure Boot, TPM, VT-x)</li>
+            </ul>
+        </div>'''
+    
+    return enhanced
+
+
 def categorize_task(task_name):
     """Catégorise les tâches d'audit par domaine de sécurité"""
     categories = {
-        'Comptes et identités': ['Administrator account', 'Guest account', 'LAPS', 'Local Admin'],
-        'Politiques de mots de passe': ['Password minimum length'],
+        'Comptes et identités': ['Administrator account', 'Guest account', 'LAPS', 'Local Admin', 'Local Admin Group'],
+        'Politiques de mots de passe': ['Password minimum length', 'LMHASH', 'NoLMHash'],
         'Contrôle d\'accès': ['UAC', 'RDP SecurityLayer', 'RDP NLA', 'RDP Encryption Level'],
-        'SMB et protocoles réseau': ['SMBv1', 'SMB signing', 'SMB Client Signing', 'NetBIOS', 'LLMNR', 'IPv6'],
+        'SMB et protocoles réseau': ['SMBv1', 'SMB signing', 'SMB Client Signing', 'NetBIOS', 'LLMNR', 'IPv6', 'SMB Share', 'NTFS Permissions'],
         'Administration à distance': ['WinRM Hardening'],
         'Protection mémoire': ['LSASS RunAsPPL', 'WDigest'],
-        'Protection antimalware': ['Defender RealTime Protection', 'AppLocker Rules', 'ASR Rules', 'Controlled Folder Access'],
-        'Sécurité physique': ['USB AutoRun', 'BitLocker'],
+        'Protection antimalware': ['Defender RealTime Protection', 'AppLocker Rules', 'ASR Rules', 'Controlled Folder Access', 'Antivirus', 'EDR'],
+        'Sécurité physique': ['USB AutoRun', 'BitLocker', 'BIOS', 'UEFI'],
         'Journalisation et audit': ['Audit logon/logoff', 'Security log size', 'Sysmon service', 'PowerShell Script Block Logging', 'Windows Event Forwarding', 'WEF'],
-        'Services et pare-feu': ['Service', 'Firewall profile', 'dangerous services', 'Service Registry', 'Permissions'],
+        'Services et pare-feu': ['Service', 'Firewall profile', 'dangerous services', 'Service Registry', 'Permissions', 'Startup Services'],
+        'Authentification avancée': ['Windows Hello', 'Windows Hello for Business', 'MFA', 'Just Enough Administration', 'JEA'],
         'Contrôle des scripts': ['PowerShell Language Mode'],
         'Gestion des sessions': ['Cached Logons Count'],
-        'Mise à jour et sécurité': ['WSUS', 'Virtualization Based Security', 'Device Guard', 'Credential Guard', 'VBS'],
-        'Gestion des applications': ['Installed Software', 'Software Inventory', 'vulnerable']
+        'Mise à jour et sécurité': ['WSUS', 'Virtualization Based Security', 'Device Guard', 'Credential Guard', 'VBS', 'Smart App Control', 'Windows Update'],
+        'Gestion des applications': ['Installed Software', 'Software Inventory', 'vulnerable', 'Running Processes', 'Processus', 'Applications détaillées'],
+        'Sysmon et monitoring': ['Sysmon']
     }
     
     for category, keywords in categories.items():
@@ -655,6 +736,16 @@ def generate_html_report(audit_data, remediation_data, output_file):
                 
                 if msg and msg != 'N/A':
                     html_content += '<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> ' + msg + '</div>\n'
+                
+                # Ajouter les sections enrichies
+                enhanced = get_enhanced_section(task_name, task)
+                if enhanced:
+                    html_content += '<div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 4px;">\n'
+                    if 'title' in enhanced:
+                        html_content += '<strong style="color: #1e293b;">' + enhanced['title'] + '</strong>\n'
+                    if 'details' in enhanced:
+                        html_content += enhanced['details']
+                    html_content += '</div>\n'
                 
                 if mitigation_advice or mitigation_cmd:
                     html_content += '<div class="remediation-info">\n'

@@ -639,3 +639,420 @@
           severity: "HIGH"
           mitigation_advice: "Les services critiques ne doivent être modifiables que par SYSTEM et Administrateurs. Supprimer les droits Write/Modify pour le groupe Users ou Utilisateurs authentifiés sur les clés de registre des services."
           mitigation_cmd: "# Utiliser icacls ou Set-Acl pour corriger les permissions. Exemple: icacls 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Spooler' /grant:r 'SYSTEM:(F)' /grant:r 'Admins:(F)' /remove 'Users'"
+
+    # --- BLOC 18 : Stockage des LM Hashes ---
+    - name: Check NoLMHash Policy
+      win_shell: |
+        try {
+          $output = secedit /export /cfg $env:TEMP\secpol.txt
+          $lmhash = (Select-String -Path "$env:TEMP\secpol.txt" -Pattern "NoLMHash" | Select-Object -First 1).ToString()
+          if ($lmhash -match "NoLMHash\s*=\s*1") {
+            Write-Output "NoLMHash=1:Secure"
+          } elseif ($lmhash -match "NoLMHash") {
+            Write-Output "NoLMHash=0:Vulnerable"
+          } else {
+            Write-Output "NoLMHash=0:Default(Vulnerable)"
+          }
+          Remove-Item "$env:TEMP\secpol.txt" -Force -ErrorAction SilentlyContinue
+        } catch {
+          Write-Output "Error/Unable to check"
+        }
+      register: lmhash_policy
+
+    - name: Record NoLMHash Status
+      debug:
+        msg:
+          task: "LMHASH Disable (NoLMHash)"
+          msg: "{{ lmhash_policy.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if 'Secure' in lmhash_policy.stdout else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Activer NoLMHash pour empêcher le stockage des empreintes LM dans la base SAM. Les hashes LM sont vulnérables aux attaques par force brute. La valeur 'aad3b435b51404eeaad3b435b51404ee' indique un mot de passe vide ou l'absence de stockage LM."
+          mitigation_cmd: "secedit /export /cfg C:\\secpol.txt; (Get-Content C:\\secpol.txt) -replace 'NoLMHash = 0', 'NoLMHash = 1' | Set-Content C:\\secpol.txt; secedit /configure /db C:\\Windows\\security\\local.sdb /cfg C:\\secpol.txt /overwrite /quiet"
+
+    # --- BLOC 19 : Smart App Control ---
+    - name: Check Smart App Control Status
+      win_shell: |
+        try {
+          $sacPolicy = (Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\CI\Policy" -Name "VerifiedAndReputablePolicyState" -ErrorAction SilentlyContinue).VerifiedAndReputablePolicyState
+          if ($null -eq $sacPolicy) {
+            Write-Output "NotPresent:Not Installed/Not Compatible"
+          } elseif ($sacPolicy -eq 0) {
+            Write-Output "Off:0"
+          } elseif ($sacPolicy -eq 1) {
+            Write-Output "On:1"
+          } elseif ($sacPolicy -eq 2) {
+            Write-Output "EvaluationMode:2"
+          } else {
+            Write-Output "Unknown:$sacPolicy"
+          }
+        } catch {
+          Write-Output "Error/Unable to check"
+        }
+      register: sac_status
+
+    - name: Record Smart App Control Status
+      debug:
+        msg:
+          task: "Smart App Control"
+          msg: "{{ sac_status.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if ('On:1' in sac_status.stdout or 'EvaluationMode:2' in sac_status.stdout) else 'INFO' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Smart App Control protège le système en contrôlant l'exécution des applications. Disponible sur Windows 11 (version 22572+) avec une installation propre en Amérique du Nord ou Europe. 0=Désactivé, 1=Activé, 2=Mode évaluation."
+          mitigation_cmd: "Smart App Control ne peut être activé que lors d'une installation Windows propre. Accédez à Paramètres > Confidentialité et sécurité > App Security Management"
+
+    # --- BLOC 20 : Mot de passe BIOS/UEFI (Recommandation) ---
+    - name: Check BIOS Password Recommendation
+      win_shell: |
+        Write-Output "BIOSPassword:ManualCheck:Firmware-level security cannot be audited via Windows. Please verify manually in BIOS/UEFI settings."
+      register: bios_check
+
+    - name: Record BIOS Password Recommendation
+      debug:
+        msg:
+          task: "BIOS/UEFI Password"
+          msg: "{{ 'Manual verification required - check BIOS/UEFI settings for password protection' }}"
+          audit_status: "INFO"
+          severity: "HIGH"
+          mitigation_advice: "La protection par mot de passe du BIOS/UEFI est recommandée pour empêcher les modifications non autorisées des paramètres de démarrage et l'accès aux paramètres de sécurité critiques. Cela protège également contre les attaques Cold Boot et les modification de l'ordre de démarrage. Vérification manuelle requise dans le firmware."
+          mitigation_cmd: "Redémarrer, entrer dans les paramètres BIOS/UEFI (généralement Delete, F2, F12, ou Ctrl+Alt+Entrée selon le fabricant), et définir un mot de passe administrateur BIOS fort."
+
+    # --- BLOC 21 : Niveau des Mises à Jour Windows ---
+    - name: Check Windows Update Level
+      win_shell: |
+        try {
+          $osVersion = [System.Environment]::OSVersion.VersionString
+          $winver = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+          $buildNumber = $winver.CurrentBuildNumber
+          $releaseId = $winver.ReleaseId
+          $displayVersion = $winver.DisplayVersion
+          
+          # Déterminer le statut basé sur la version
+          if ([int]$buildNumber -ge 22621) {
+            Write-Output "Windows11:Build$buildNumber:Current/Latest"
+          } elseif ([int]$buildNumber -ge 22000) {
+            Write-Output "Windows11:Build$buildNumber:Outdated"
+          } elseif ([int]$buildNumber -ge 19045) {
+            Write-Output "Windows10:Build$buildNumber:OutOfSupport"
+          } else {
+            Write-Output "Windows-Older:Build$buildNumber:CriticallyOutdated"
+          }
+        } catch {
+          Write-Output "Error:Unable to determine Windows version"
+        }
+      register: windows_update
+
+    - name: Record Windows Update Level
+      debug:
+        msg:
+          task: "Windows Update Level"
+          msg: "{{ windows_update.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if 'Current/Latest' in windows_update.stdout or 'Build' in windows_update.stdout else 'FAIL' }}"
+          severity: "CRITICAL"
+          mitigation_advice: "Maintenir le système à jour avec les derniers patches de sécurité est essentiel. Windows 11 Build 22621+ est considéré comme à jour. Windows 10 a atteint la fin du support (EOS: 14 octobre 2025). Les versions antérieures ne reçoivent plus de mises à jour de sécurité et présentent un risque critique. Appliquez immédiatement tous les patchs disponibles via Windows Update."
+          mitigation_cmd: "Aller à Paramètres > Mise à jour et sécurité > Mises à jour Windows > Vérifier les mises à jour. Ou utiliser: Install-Module -Name PSWindowsUpdate -Force; Get-WindowsUpdate -Install -AcceptAll"
+
+    # --- BLOC 22 : Windows Hello for Business (MFA/MWA) ---
+    - name: Check Windows Hello for Business - GPO
+      win_shell: |
+        try {
+          $whfbGPO = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\PassportForWork" -Name "Enabled" -ErrorAction SilentlyContinue).Enabled
+          $whfbCSP = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Policies\PassportForWork" -Name "UsePassportForWork" -ErrorAction SilentlyContinue).UsePassportForWork
+          
+          if ($whfbGPO -eq 1) {
+            Write-Output "Enabled:GPO"
+          } elseif ($whfbCSP -eq 1) {
+            Write-Output "Enabled:CSP"
+          } else {
+            Write-Output "Disabled:NotConfigured"
+          }
+        } catch {
+          Write-Output "Error/Unable to check"
+        }
+      register: whfb_status
+
+    - name: Record Windows Hello for Business Status
+      debug:
+        msg:
+          task: "Windows Hello for Business"
+          msg: "{{ whfb_status.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if 'Enabled' in whfb_status.stdout else 'FAIL' }}"
+          severity: "HIGH"
+          mitigation_advice: "Windows Hello for Business offre une authentification multi-facteur (MFA) basée sur la biométrie ou le PIN, renforçant considérablement la sécurité des accès. L'activation peut se faire via GPO (HKLM:\\SOFTWARE\\Policies\\Microsoft\\PassportForWork\\Enabled) ou CSP (HKLM:\\SOFTWARE\\Microsoft\\Policies\\PassportForWork\\UsePassportForWork). Cela remplace les mots de passe traditionnels par une authentification multi-facteurs."
+          mitigation_cmd: "Configurer via GPO: Configuration Ordinateur > Politiques > Modèles d'administration > Système > Ouverture de session > Configurer Windows Hello for Business. Ou via CSP/Intune: Policies/Windows/PassportForWork"
+
+    # --- BLOC 23 : Just Enough Administration (JEA) ---
+    - name: Check JEA Configuration
+      win_shell: |
+        try {
+          $jeaModules = @()
+          $jeaPath = "$env:ProgramFiles\WindowsPowerShell\Modules\JEA"
+          if (Test-Path $jeaPath) {
+            Get-ChildItem -Path $jeaPath -Directory | ForEach-Object {
+              $jeaModules += $_.Name
+            }
+          }
+          
+          # Vérifier les fichiers de configuration de session
+          $sessionConfigs = Get-PSSessionConfiguration -ErrorAction SilentlyContinue
+          $jeaConfigs = @()
+          foreach ($config in $sessionConfigs) {
+            $configPath = $config.ConfigFilePath
+            if ($configPath -and (Test-Path $configPath)) {
+              $content = Get-Content -Path $configPath -Raw
+              if ($content -match "RoleDefinitions|VisibleCmdlets|ScriptBlockLogging") {
+                $jeaConfigs += $config.Name
+              }
+            }
+          }
+          
+          if ($jeaConfigs.Count -gt 0) {
+            Write-Output "Configured:$($jeaConfigs -join ', ')"
+          } elseif ($jeaModules.Count -gt 0) {
+            Write-Output "Installed:$($jeaModules -join ', ')"
+          } else {
+            Write-Output "NotConfigured:NoJEA"
+          }
+        } catch {
+          Write-Output "Error/Unable to check"
+        }
+      register: jea_status
+
+    - name: Record JEA Configuration
+      debug:
+        msg:
+          task: "Just Enough Administration (JEA)"
+          msg: "{{ jea_status.stdout.strip() }}"
+          audit_status: "{{ 'PASS' if 'Configured' in jea_status.stdout else 'INFO' }}"
+          severity: "MEDIUM"
+          mitigation_advice: "Just Enough Administration (JEA) limite les privilèges des comptes de service et administrateurs en ne loro accordant que les cmdlets PowerShell strictement nécessaires. Cela réduit les risques de compromission et de mouvements latéraux. Les rôles JEA doivent définir: RoleDefinitions, VisibleCmdlets, et ScriptBlockLogging pour auditer les actions."
+          mitigation_cmd: "Configurer un endpoint JEA: New-PSRoleCapabilityFile -Path 'C:\\Program Files\\WindowsPowerShell\\Modules\\JEA\\RoleCapabilities\\LimitedRole.psrc' ; New-PSSessionConfigurationFile -RunAsVirtualAccount -RoleDefinitions @{LimitedRole='@{RoleCapabilityFiles=\"C:\\Program Files\\WindowsPowerShell\\Modules\\JEA\\RoleCapabilities\\LimitedRole.psrc\"}'}"
+
+    # --- BLOC 24 : Permissions SMB vs NTFS ---
+    - name: Check SMB Share Permissions vs NTFS
+      win_shell: |
+        try {
+          $results = @()
+          $shares = Get-SmbShare -ErrorAction SilentlyContinue | Where-Object {$_.Name -notmatch '^(IPC\$|ADMIN\$|C\$|D\$|E\$|PRINT\$)'}
+          
+          foreach ($share in $shares) {
+            $sharePath = $share.Path
+            $shareName = $share.Name
+            try {
+              $smbAccess = Get-SmbShareAccess -Name $shareName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty AccountName
+              $ntfsAccess = (Get-Acl -Path $sharePath -ErrorAction SilentlyContinue).Access | Select-Object -ExpandProperty IdentityReference
+              
+              $smbCount = @($smbAccess).Count
+              $ntfsCount = @($ntfsAccess).Count
+              
+              if ($smbCount -gt $ntfsCount) {
+                $results += "$shareName:MISMATCH(SMB>NTFS)"
+              } else {
+                $results += "$shareName:OK"
+              }
+            } catch {
+              $results += "$shareName:Error"
+            }
+          }
+          
+          if ($results.Count -gt 0) {
+            $results | ForEach-Object { Write-Output $_ }
+          } else {
+            Write-Output "NoSharesFound"
+          }
+        } catch {
+          Write-Output "Error/Unable to check"
+        }
+      register: smb_ntfs_perms
+
+    - name: Record SMB vs NTFS Permissions
+      debug:
+        msg:
+          task: "SMB Share vs NTFS Permissions"
+          msg: "{{ smb_ntfs_perms.stdout if smb_ntfs_perms.stdout.strip() else 'No shares to audit' }}"
+          audit_status: "{{ 'FAIL' if 'MISMATCH' in smb_ntfs_perms.stdout else 'PASS' }}"
+          severity: "HIGH"
+          mitigation_advice: "Les permissions SMB et NTFS doivent être alignées. Les droits SMB ne sont restrictifs que s'ils sont plus permissifs que les droits NTFS. Une bonne pratique est: droits SMB restrictifs (Everyone: Read) + droits NTFS granulaires. Auditer régulièrement l'alignement pour éviter les escalades de privilèges."
+          mitigation_cmd: "Vérifier: Get-SmbShare | foreach {Get-SmbShareAccess -Name $_.Name} et comparer avec: Get-Acl 'C:\\path\\to\\share' | Select-Object -ExpandProperty Access. Corriger en harmonisant les droits via Grant-SmbShareAccess et Set-Acl."
+
+    # --- BLOC 25 : Services lancés au démarrage ---
+    - name: List Startup Services
+      win_shell: |
+        try {
+          $startupServices = @()
+          # Via WMIC
+          $wmicOutput = wmic startup get name,command /format:list 2>$null | Select-String "Name=|Command="
+          
+          # Via Get-Service (filtrer les services Auto/Boot)
+          $services = Get-Service | Where-Object {$_.StartType -in @('Automatic', 'Boot')} | Select-Object -ExpandProperty Name
+          
+          if ($services.Count -gt 0) {
+            foreach ($svc in $services) {
+              $startupServices += $svc
+            }
+            Write-Output "StartupServices:Count=$($startupServices.Count)"
+            $startupServices | ForEach-Object { Write-Output "- $_" }
+          } else {
+            Write-Output "NoStartupServices"
+          }
+        } catch {
+          Write-Output "Error:Unable to list startup services"
+        }
+      register: startup_services
+
+    - name: Record Startup Services
+      debug:
+        msg:
+          task: "Startup Services Inventory"
+          msg: "{{ startup_services.stdout if startup_services.stdout.strip() else 'Unable to retrieve' }}"
+          audit_status: "INFO"
+          severity: "MEDIUM"
+          mitigation_advice: "Auditer les services lancés au démarrage est crucial pour identifier les entrées de persistance malveillante ou les services inutiles qui ralentissent le système. Désactiver les services non essentiels (DiagTrack, Spooler, etc.) et vérifier que les services Automatic n'ont pas été compromis. Chercher les services suspects ou les chemins d'exécution non standards."
+          mitigation_cmd: "Lister via: Get-Service | Where-Object {$_.StartType -eq 'Automatic'} | Select-Object Name, DisplayName. Ou via WMIC: wmic startup get name,command. Désactiver un service: Set-Service -Name 'ServiceName' -StartupType Disabled"
+
+    # --- BLOC 26 : Processus en cours d'exécution ---
+    - name: List Running Processes
+      win_shell: |
+        try {
+          $processes = @()
+          $procList = Get-Process | Select-Object -Property Name, Id, ProcessName, @{Name='User';Expression={(Get-Process -Id $_.Id -ErrorAction SilentlyContinue | Select-Object @{Name='User';Expression={$_.UserName}}).User}} -ErrorAction SilentlyContinue
+          
+          if ($procList.Count -gt 0) {
+            Write-Output "RunningProcesses:Count=$($procList.Count)"
+            # Afficher les processus suspects (non-système)
+            $suspiciousProcesses = $procList | Where-Object {$_.ProcessName -notmatch '^(svchost|lsass|csrss|System|explorer|dwm|winlogon|conhost|services|smss|SearchIndexer|UserOOBELocalService)$'}
+            if ($suspiciousProcesses.Count -gt 0) {
+              Write-Output "SuspiciousProcesses:$($suspiciousProcesses.Count)"
+              $suspiciousProcesses | ForEach-Object { Write-Output "  $($_.Name) (PID:$($_.Id))" }
+            } else {
+              Write-Output "OnlySystemProcesses"
+            }
+          } else {
+            Write-Output "Unable to retrieve processes"
+          }
+        } catch {
+          Write-Output "Error:Unable to list running processes"
+        }
+      register: running_processes
+
+    - name: Record Running Processes
+      debug:
+        msg:
+          task: "Running Processes Inventory"
+          msg: "{{ running_processes.stdout if running_processes.stdout.strip() else 'Unable to retrieve' }}"
+          audit_status: "INFO"
+          severity: "MEDIUM"
+          mitigation_advice: "Auditer régulièrement les processus en cours d'exécution aide à détecter les malwares, les rootkits et les comportements suspects. Chercher les processus: avec des chemins non-standard, lancés par des comptes de faible privilège mais avec droits élevés, avec des noms similaires à des processus système (comme svcholt.exe au lieu de svchost.exe), ou lancés depuis des répertoires TEMP. Utiliser des outils comme Autoruns ou Process Monitor pour approfondir."
+          mitigation_cmd: "Lister tous les processus: Get-Process. Avec détails utilisateur: Get-Process | Select-Object -Property Name, Id, @{Name='Owner';Expression={$_.UserName}}. Tuer un processus: Stop-Process -Id PID -Force. Rechercher les processus suspectes: Get-Process | Where-Object {$_.Path -like '*temp*' -or $_.Path -like '*downloads*'}"
+
+    # --- BLOC 27 : Antivirus / EDR Presence ---
+    - name: Check Antivirus and EDR Status
+      win_shell: |
+        try {
+          $antivirusInfo = @()
+          
+          # Vérifier Windows Defender
+          $defender = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender" -ErrorAction SilentlyContinue
+          $defenderSignatures = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Signature Updates" -ErrorAction SilentlyContinue
+          
+          if ($defender) {
+            $isDisabled = $defender.DisableAntiSpyware
+            $engineVersion = $defenderSignatures.EngineVersion
+            if ($isDisabled -ne 1) {
+              $antivirusInfo += "WindowsDefender:Active(EngineVersion=$engineVersion)"
+            } else {
+              $antivirusInfo += "WindowsDefender:Disabled"
+            }
+          }
+          
+          # Vérifier les antivirus tiers via WMI
+          $antivirusProducts = Get-CimInstance -Namespace "root\SecurityCenter2" -ClassName "AntiVirusProduct" -ErrorAction SilentlyContinue
+          if ($antivirusProducts.Count -gt 0) {
+            foreach ($av in $antivirusProducts) {
+              $displayName = $av.displayName
+              $productState = $av.productState
+              if (($productState -band 0x1000) -eq 0x1000) {
+                $antivirusInfo += "$displayName:Active"
+              } else {
+                $antivirusInfo += "$displayName:Inactive"
+              }
+            }
+          }
+          
+          # Vérifier les EDR courants
+          $edrApps = @('CrowdStrike', 'SentinelOne', 'Defender for Endpoint', 'Cylance', 'Kaspersky', 'Sophos', 'Trend Micro', 'McAfee')
+          $installedSoftware = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DisplayName
+          foreach ($edr in $edrApps) {
+            if ($installedSoftware -match $edr) {
+              $antivirusInfo += "$edr:Installed"
+            }
+          }
+          
+          if ($antivirusInfo.Count -gt 0) {
+            Write-Output "ProtectionPresent:Yes"
+            $antivirusInfo | ForEach-Object { Write-Output "- $_" }
+          } else {
+            Write-Output "ProtectionPresent:No/Undetected"
+          }
+        } catch {
+          Write-Output "Error:Unable to check antivirus status"
+        }
+      register: antivirus_status
+
+    - name: Record Antivirus/EDR Status
+      debug:
+        msg:
+          task: "Antivirus / EDR Presence"
+          msg: "{{ antivirus_status.stdout if antivirus_status.stdout.strip() else 'Unable to retrieve' }}"
+          audit_status: "{{ 'PASS' if 'Active' in antivirus_status.stdout or 'Installed' in antivirus_status.stdout else 'FAIL' }}"
+          severity: "CRITICAL"
+          mitigation_advice: "La présence d'un antivirus ou EDR est essentielle. Windows Defender doit être actif par défaut. Pour une protection optimale en entreprise, déployer une solution EDR (CrowdStrike, SentinelOne, Defender for Endpoint, etc). Vérifier que les signatures sont à jour et que la protection en temps réel est activée."
+          mitigation_cmd: "Vérifier Defender: Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows Defender' | Select-Object DisableAntiSpyware. Activer: Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows Defender' -Name DisableAntiSpyware -Value 0. Vérifier EDR: Get-CimInstance -Namespace 'root\\SecurityCenter2' -ClassName 'AntiVirusProduct'"
+
+    # --- BLOC 28 : Inventaire Détaillé des Applications Installées ---
+    - name: Detailed Installed Software Inventory
+      win_shell: |
+        try {
+          $appsList = @()
+          
+          # Récupérer depuis 64-bit
+          $apps64 = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
+            Where-Object { $_.DisplayName } | 
+            Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, @{Name='Architecture';Expression={'64-bit'}}
+          
+          # Récupérer depuis 32-bit
+          $apps32 = Get-ItemProperty "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
+            Where-Object { $_.DisplayName } | 
+            Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, @{Name='Architecture';Expression={'32-bit'}}
+          
+          # Combiner et trier
+          $allApps = @($apps64) + @($apps32) | Sort-Object DisplayName -Unique
+          
+          if ($allApps.Count -gt 0) {
+            Write-Output "InstalledApplications:Count=$($allApps.Count)"
+            Write-Output "==========================================="
+            foreach ($app in $allApps) {
+              $name = $app.DisplayName
+              $version = if ($app.DisplayVersion) { $app.DisplayVersion } else { "Unknown" }
+              $publisher = if ($app.Publisher) { $app.Publisher } else { "N/A" }
+              $date = if ($app.InstallDate) { $app.InstallDate } else { "N/A" }
+              $arch = $app.Architecture
+              Write-Output "$name | v$version | Publisher: $publisher | Installed: $date | Arch: $arch"
+            }
+            Write-Output "==========================================="
+          } else {
+            Write-Output "NoApplicationsDetected"
+          }
+        } catch {
+          Write-Output "Error:Unable to retrieve installed applications"
+        }
+      register: detailed_apps_list
+
+    - name: Record Detailed Applications List
+      debug:
+        msg:
+          task: "Detailed Installed Software Inventory"
+          msg: "{{ detailed_apps_list.stdout if detailed_apps_list.stdout.strip() else 'Unable to retrieve' }}"
+          audit_status: "INFO"
+          severity: "INFO"
+          mitigation_advice: "Audit complet de toutes les applications installées avec versions, éditeurs et dates. Cet inventaire permet de détecter: les applications non autorisées, les versions vulnérables, les doublons, les applications orphelines. Mettre à jour régulièrement et supprimer les applications non essentielles ou obsolètes."
+          mitigation_cmd: "Exporter l'inventaire: Get-ItemProperty 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select-Object DisplayName, DisplayVersion, Publisher | Export-Csv -Path C:\\apps.csv. Ou via JSON: ConvertTo-Json | Out-File C:\\apps.json"
