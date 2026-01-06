@@ -1,0 +1,26 @@
+[WARNING]: Found duplicate mapping key 'ignore_errors'.
+Origin: /home/bibi/windows-audit-ansible-main/audit.yml:542:7
+
+540       register: admin_members
+541       ignore_errors: yes
+542       ignore_errors: yes
+          ^ column 7
+
+Using last defined value only.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Administrator account] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+      arc4 = algorithms.ARC4(self._key)
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Guest account] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+      arc4 = algorithms.ARC4(self._key)
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check minimum password length] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+      arc4 = algorithms.ARC4(self._key)
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check LAPS installation] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+      arc4 = algorithms.ARC4(self._key)
+

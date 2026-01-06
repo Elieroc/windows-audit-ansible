@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport d'Audit de Sécurité Windows</title>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 50px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: none;
+        }
+        
+        .logo img {
+            display: none;
+        }
+        
+        .btn-export-pdf {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-export-pdf:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        
+        .header-text h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-text p {
+            font-size: 1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            text-align: center;
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        
+        .summary-card.score { border-color: #3b82f6; }
+        .summary-card.pass { border-color: #10b981; }
+        .summary-card.fail { border-color: #ef4444; }
+        .summary-card.warning { border-color: #f59e0b; }
+        .summary-card.info { border-color: #6366f1; }
+        
+        .summary-card h3 {
+            font-size: 0.75em;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        
+        .summary-card.score .value { color: #3b82f6; }
+        .summary-card.pass .value { color: #10b981; }
+        .summary-card.fail .value { color: #ef4444; }
+        .summary-card.warning .value { color: #f59e0b; }
+        .summary-card.info .value { color: #6366f1; }
+        
+        .critical-alerts {
+            margin: 30px 40px;
+            padding: 24px;
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
+            border-radius: 8px;
+        }
+        
+        .critical-alerts h2 {
+            color: #dc2626;
+            margin-bottom: 16px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .high-alerts {
+            margin: 30px 40px;
+            padding: 24px;
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            border-radius: 8px;
+        }
+        
+        .high-alerts h2 {
+            color: #f97316;
+            margin-bottom: 16px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .alert-item {
+            background: white;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            font-size: 0.95em;
+        }
+        
+        .alert-item strong {
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .host-section {
+            padding: 40px;
+        }
+        
+        .host-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px 28px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .host-header h2 {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        
+        .category-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 4px solid #10b981;
+            border-radius: 6px;
+        }
+        
+        .category-section h3 {
+            color: #1e293b;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+        
+        .task-item {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: white;
+            border-left: 4px solid #10b981;
+            border-radius: 4px;
+        }
+        
+        .task-item.fail {
+            border-left-color: #ef4444;
+        }
+        
+        .task-item.warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .severity-badge {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        .severity-critical { background: #7f1d1d; color: white; }
+        .severity-high { background: #c2410c; color: white; }
+        .severity-medium { background: #f59e0b; color: white; }
+        .severity-low { background: #65a30d; color: white; }
+        .severity-info { background: #3b82f6; color: white; }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            margin-left: 10px;
+            border: 1px solid;
+        }
+        
+        .status-pass { background: #d1fae5; color: #065f46; border-color: #10b981; }
+        .status-fail { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
+        .status-warning { background: #fed7aa; color: #92400e; border-color: #f59e0b; }
+        .status-info { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+        
+        .remediation-info {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            background: #f0f9ff;
+            padding: 12px;
+            border-radius: 4px;
+            color: #0c4a6e;
+            font-size: 0.9em;
+        }
+        
+        .command-block {
+            background: #0c4a6e;
+            color: #e0f2fe;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .summary-dashboard {
+            padding: 40px;
+            background: #f8fafc;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .dashboard-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        
+        .dashboard-card h3 {
+            color: #1e293b;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        
+        .dashboard-card .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.9em;
+        }
+        
+        .dashboard-card .stats span {
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 8px;
+        }
+        
+        .progress-fill {
+            background: #10b981;
+            height: 100%;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .container { box-shadow: none; }
+            .btn-export-pdf { display: none; }
+        }
+    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="header-content">
+<div class="header-text">
+<h1>Rapport d'Audit de Sécurité Windows</h1>
+<p>Analyse détaillée de la conformité et des vulnérabilités - 06/01/2026 à 16:22:54</p>
+</div>
+<button class="btn-export-pdf" onclick="exportPDF()">📄 Rapport PDF</button>
+</div>
+</header>
+<div style="margin: 30px 40px; padding: 20px; background: #fff3cd; border-left: 4px solid #f59e0b; border-radius: 8px;">
+<h2 style="color: #92400e; margin-bottom: 12px; font-size: 1.2em; font-weight: 600;">🖥️ Vérification Manuelle Requise - BIOS/UEFI</h2>
+<p style="color: #78350f; font-size: 0.95em; margin: 8px 0; line-height: 1.6;">Recommandation pour le mot de passe BIOS .</p>
+<p style="color: #78350f; font-size: 0.95em; margin: 8px 0; line-height: 1.6;"><strong>⚠️ Action requise :</strong> Le mot de passe BIOS/UEFI doit être vérifié manuellement et mis en place sur chaque machine. Cette vérification ne peut pas être automatisée via un script.</p>
+</div>
+<div class="summary">
+<div class="summary-card score">
+<h3>Score de Sécurité</h3>
+<div class="value">45%</div>
+<p>14 / 31 conformes</p>
+</div>
+<div class="summary-card fail">
+<h3>Problèmes Critiques</h3>
+<div class="value">1</div>
+<p>Action immédiate</p>
+</div>
+<div class="summary-card fail">
+<h3>Problèmes Élevés</h3>
+<div class="value">11</div>
+<p>Haute priorité</p>
+</div>
+<div class="summary-card pass">
+<h3>Réussis</h3>
+<div class="value">14</div>
+<p>Conformes</p>
+</div>
+<div class="summary-card warning">
+<h3>Avertissements</h3>
+<div class="value">4</div>
+<p>À surveiller</p>
+</div>
+</div>
+<div class="critical-alerts">
+<h2>🚨 Problèmes Critiques - Action Immédiate Requise</h2>
+<div class="alert-item"><strong>ESGI5-server</strong> - LSASS RunAsPPL: disabled</div>
+</div>
+<div class="high-alerts">
+<h2>⚠️ Problèmes de Haute Priorité</h2>
+<div class="alert-item"><strong>ESGI5-server</strong> - Administrator account: enabled</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - Password minimum length: FAIL (<12)</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - LAPS installation: not installed</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - SMB signing: not required</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - WDigest (Cleartext Passwords): enabled/default</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - WinRM Hardening: Insecure</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - BitLocker C:: Off/Not installed</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - SMB Client Signing: Not Required</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - PowerShell Script Block Logging: Disabled</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - LMHASH Disable (NoLMHash): NoLMHash=0:Vulnerable</div>
+<div class="alert-item"><strong>ESGI5-server</strong> - Windows Hello for Business: Disabled:NotConfigured</div>
+</div>
+<div class="summary-dashboard">
+<h2 style="margin-bottom: 30px; color: #1e293b;">📊 Résumé par Domaine de Sécurité</h2>
+<div class="dashboard-grid">
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>SMB et protocoles réseau</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 2 réussi(s)</span>
+<span style="color: #ef4444;">✗ 4 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 28%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">28% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Politiques de mots de passe</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 2 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Protection mémoire</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 2 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Sécurité physique</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 2 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Journalisation et audit</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 1 réussi(s)</span>
+<span style="color: #ef4444;">✗ 2 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 20%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">20% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Comptes et identités</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 2 réussi(s)</span>
+<span style="color: #ef4444;">✗ 2 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 50%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">50% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Gestion des sessions</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 1 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Administration à distance</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 1 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #ef4444;">
+<h3>Authentification avancée</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 1 réussi(s)</span>
+<span style="color: #ef4444;">✗ 1 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 50%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">50% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #10b981;">
+<h3>Contrôle des scripts</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #10b981;">
+<h3>Gestion des applications</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 0 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 0%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">0% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #10b981;">
+<h3>Services et pare-feu</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 1 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 25%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">25% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #f59e0b;">
+<h3>Protection antimalware</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 2 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 40%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">40% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #10b981;">
+<h3>Mise à jour et sécurité</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 2 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 50%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">50% conforme</p>
+</div>
+<div class="dashboard-card" style="border-left-color: #f59e0b;">
+<h3>Contrôle d'accès</h3>
+<div class="stats">
+<span style="color: #10b981;">✓ 3 réussi(s)</span>
+<span style="color: #ef4444;">✗ 0 échoué(s)</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width: 75%;"></div>
+</div>
+<p style="margin-top: 10px; color: #64748b; font-size: 0.85em;">75% conforme</p>
+</div>
+</div>
+</div>
+<div class="host-section">
+<div class="host-header"><h2>💻 ESGI5-server</h2></div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Administration à distance</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 0 réussi(s) | 1 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">WinRM Hardening</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Insecure</div>
+<div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 4px;">
+<strong style="color: #1e293b;">🔐 Configuration WinRM - Authentification et Chiffrement</strong>
+
+        <div style="background: #f0f9ff; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Modes d'authentification disponibles :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>Basic</code> - ❌ À éviter (identifiants en clair)</li>
+                <li><code>Certificate</code> - ✓ Recommandé</li>
+                <li><code>Negotiate (NTLM et Kerberos)</code> - ✓ Recommandé</li>
+                <li><code>Kerberos</code> - ✓ Recommandé</li>
+                <li><code>CredSSP</code> - ⚠️ À configurer avec prudence</li>
+            </ul>
+            <strong>Clés de registre critiques :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic</code> = 0</li>
+                <li><code>HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic</code> = 0</li>
+                <li><code>HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client\AllowBasic</code> = 0</li>
+                <li><code>HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client\AllowUnencryptedTraffic</code> = 0</li>
+            </ul>
+        </div></div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Désactiver l'authentification Basic et le trafic non chiffré pour WinRM pour éviter les attaques Man-In-The-Middle.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -Name AllowBasic -Value 0; Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -Name AllowUnencryptedTraffic -Value 0</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Authentification avancée</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 1 réussi(s) | 1 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Windows Hello for Business</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Disabled:NotConfigured</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Windows Hello for Business offre une authentification multi-facteur (MFA) basée sur la biométrie ou le PIN, renforçant considérablement la sécurité des accès. L'activation peut se faire via GPO (HKLM:\SOFTWARE\Policies\Microsoft\PassportForWork\Enabled) ou CSP (HKLM:\SOFTWARE\Microsoft\Policies\PassportForWork\UsePassportForWork). Cela remplace les mots de passe traditionnels par une authentification multi-facteurs.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Configurer via GPO: Configuration Ordinateur &gt; Politiques &gt; Modèles d'administration &gt; Système &gt; Ouverture de session &gt; Configurer Windows Hello for Business. Ou via CSP/Intune: Policies/Windows/PassportForWork</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Just Enough Administration (JEA)</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> NotConfigured:NoJEA</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Just Enough Administration (JEA) limite les privilèges des comptes de service et administrateurs en ne loro accordant que les cmdlets PowerShell strictement nécessaires. Cela réduit les risques de compromission et de mouvements latéraux. Les rôles JEA doivent définir: RoleDefinitions, VisibleCmdlets, et ScriptBlockLogging pour auditer les actions.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Configurer un endpoint JEA: New-PSRoleCapabilityFile -Path 'C:\Program Files\WindowsPowerShell\Modules\JEA\RoleCapabilities\LimitedRole.psrc' ; New-PSSessionConfigurationFile -RunAsVirtualAccount -RoleDefinitions @{LimitedRole='@{RoleCapabilityFiles="C:\Program Files\WindowsPowerShell\Modules\JEA\RoleCapabilities\LimitedRole.psrc"}'}</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Comptes et identités</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 2 réussi(s) | 2 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Administrator account</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Il est recommandé de désactiver le compte Administrateur par défaut et d'utiliser des comptes nominatifs avec droits maîtrisés (LAPS pour les mots de passe locaux).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Disable-LocalUser -Name 'Administrator'</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Guest account</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> disabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Il est recommandé de désactiver le compte Guest par défaut si non utilisé.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Disable-LocalUser -Name 'Guest'</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">LAPS installation</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> not installed</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Installer et déployer Microsoft LAPS pour gérer automatiquement les mots de passe des comptes administrateurs locaux.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Install-Module -Name LAPS -Force</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Local Admin Group Members</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> WIN-RNGUKIGIR06\Administrator
+WIN-RNGUKIGIR06\michel
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Auditer régulièrement les membres du groupe Administrateurs et supprimer les comptes inutilisés. Utiliser LAPS pour gérer les comptes locaux.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Get-LocalGroupMember -Group 'Administrateurs'</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Contrôle d'accès</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 3 réussi(s) | 0 échoué(s) | 1 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">UAC (EnableLUA)</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer l'UAC pour réduire la surface d'exécution avec privilèges élevés.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">RDP SecurityLayer</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> TLS (2)</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Configurer SecurityLayer à 2 pour forcer TLS pour RDP.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name SecurityLayer -Value 2</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">RDP NLA</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer NLA pour protéger le service RDP.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name UserAuthentication -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #f59e0b;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">RDP Encryption Level</span>
+<span class="status-warning">ATTENTION</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Low</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Régler le niveau de chiffrement RDP à 3 (High) ou 4 (FIPS) pour protéger les sessions RDP.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name MinEncryptionLevel -Value 3</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Contrôle des scripts</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 0 réussi(s) | 0 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">PowerShell Language Mode</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-low">LOW</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> FullLanguage</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Envisager le mode ConstrainedLanguage pour les utilisateurs standards via AppLocker ou WDAC pour bloquer les scripts malveillants avancés.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br># Configuration via AppLocker ou WDAC - ne peut pas être changé directement</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Gestion des applications</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 0 réussi(s) | 0 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Installed Software Inventory</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #0284c7;">
+<p style="color: #0c4a6e; font-weight: 600; margin-bottom: 12px; font-size: 1.1em;">📦 Total: 0 application(s) installée(s)</p>
+<div style="max-height: 600px; overflow-y: auto; border: 1px solid #bae6fd; border-radius: 4px; background: white;">
+<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+<thead style="position: sticky; top: 0; background: #e0f2fe; z-index: 1;">
+<tr>
+<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Application</th>
+<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Version</th>
+<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Éditeur</th>
+<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Date</th>
+<th style="padding: 10px; text-align: center; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Arch</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+</div>
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Audit complet de tous les logiciels installés. Vérifier les versions des logiciels critiques (Java, Adobe, navigateurs, etc.). Maintenir à jour et appliquer les patches rapidement, particulièrement pour les logiciels côté client souvent exploités.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br># Mettre à jour via Windows Update, WSUS ou les outils spécifiques des éditeurs</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Running Processes Inventory</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> RunningProcesses:Count=100
+SuspiciousProcesses:33
+  cmd (PID:1664)
+  cmd (PID:2744)
+  ctfmon (PID:3916)
+  dllhost (PID:1120)
+  dllhost (PID:1788)
+  dllhost (PID:3144)
+  fontdrvhost (PID:796)
+  fontdrvhost (PID:804)
+  Idle (PID:0)
+  MpDefenderCoreService (PID:2528)
+  msdtc (PID:4072)
+  MsMpEng (PID:2568)
+  MusNotifyIcon (PID:1376)
+  NisSrv (PID:3408)
+  powershell (PID:476)
+  powershell (PID:4828)
+  Registry (PID:104)
+  RuntimeBroker (PID:4124)
+  RuntimeBroker (PID:4176)
+  RuntimeBroker (PID:4728)
+  SearchUI (PID:3212)
+  ServerManager (PID:3760)
+  ShellExperienceHost (PID:2852)
+  sihost (PID:2244)
+  smartscreen (PID:4780)
+  spoolsv (PID:2416)
+  taskhostw (PID:3708)
+  TiWorker (PID:3448)
+  TrustedInstaller (PID:4864)
+  wininit (PID:468)
+  winrshost (PID:3712)
+  WmiPrvSE (PID:4468)
+  WmiPrvSE (PID:4908)
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Auditer régulièrement les processus en cours d'exécution aide à détecter les malwares, les rootkits et les comportements suspects. Chercher les processus: avec des chemins non-standard, lancés par des comptes de faible privilège mais avec droits élevés, avec des noms similaires à des processus système (comme svcholt.exe au lieu de svchost.exe), ou lancés depuis des répertoires TEMP. Utiliser des outils comme Autoruns ou Process Monitor pour approfondir.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Lister tous les processus: Get-Process. Avec détails utilisateur: Get-Process | Select-Object -Property Name, Id, @{Name='Owner';Expression={$_.UserName}}. Tuer un processus: Stop-Process -Id PID -Force. Rechercher les processus suspectes: Get-Process | Where-Object {$_.Path -like '*temp*' -or $_.Path -like '*downloads*'}</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Detailed Installed Software Inventory</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-info">INFO</span>
+<p style="color: #ef4444;">⚠️ Aucune application détectée ou erreur de récupération. Vérifiez que le script PowerShell s'exécute correctement.</p><div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Audit complet de toutes les applications installées avec versions, éditeurs et dates. Cet inventaire permet de détecter: les applications non autorisées, les versions vulnérables, les doublons, les applications orphelines. Mettre à jour régulièrement et supprimer les applications non essentielles ou obsolètes.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Exporter l'inventaire: Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' | Select-Object DisplayName, DisplayVersion, Publisher | Export-Csv -Path C:\apps.csv. Ou via JSON: ConvertTo-Json | Out-File C:\apps.json</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Gestion des sessions</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 0 réussi(s) | 1 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Cached Logons Count</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> 10</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Réduire le nombre de sessions en cache (0-2) pour limiter l'extraction de hash MSCache2 par les attaquants en cas de compromission offline.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name CachedLogonsCount -Value 1</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Journalisation et audit</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 1 réussi(s) | 2 échoué(s) | 1 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Audit logon/logoff</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> configured</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Configurer l'audit pour succès et échecs sur logon/logoff via GPO.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>auditpol /set /category:'Logon/Logoff' /success:enable /failure:enable</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #f59e0b;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Security log size</span>
+<span class="status-warning">ATTENTION</span>
+</div>
+<span class="severity-badge severity-low">LOW</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> <1GB</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Augmenter la taille du journal de sécurité pour éviter la perte d'événements.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>wevtutil sl Security /ms:1073741824</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Sysmon service</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-info">INFO</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> not installed</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Installer Sysmon pour une meilleure journalisation si nécessaire.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>sysmon64.exe -accepteula -i sysmonconfig.xml</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">PowerShell Script Block Logging</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Disabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer la journalisation des blocs de scripts PowerShell pour auditer les commandes exécutées, même offusquées.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -Force; Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Windows Event Forwarding (WEF)</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Not Configured</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Configurer WEF pour centraliser les journaux sur un serveur de logs centralisé (SIEM). Cela permet une meilleure détection d'incidents et conformité.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br># Configuration via GPO ou WEF Subscription Manager</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Mise à jour et sécurité</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 2 réussi(s) | 0 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">WSUS Configuration</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Direct Microsoft Update</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Si un serveur WSUS est utilisé, il DOIT être configuré en HTTPS pour éviter l'injection de fausses mises à jour.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Configurer le serveur WSUS pour utiliser SSL/TLS et mettre à jour la GPO.</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Virtualization Based Security (Credential Guard)</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Not Running</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer VBS et Credential Guard si le matériel le supporte (nécessite CPU avec virtualisation + TPM).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Activer via GPO: Configuration Ordinateur &gt; Système &gt; Device Guard &gt; Activer la sécurité basée sur la virtualisation.</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Smart App Control</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> NotPresent:Not Installed/Not Compatible</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Smart App Control protège le système en contrôlant l'exécution des applications. Disponible sur Windows 11 (version 22572+) avec une installation propre en Amérique du Nord ou Europe. 0=Désactivé, 1=Activé, 2=Mode évaluation.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Smart App Control ne peut être activé que lors d'une installation Windows propre. Accédez à Paramètres &gt; Confidentialité et sécurité &gt; App Security Management</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Windows Update Level</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-critical">CRITICAL</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Windows-Older:Build</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Maintenir le système à jour avec les derniers patches de sécurité est essentiel. Windows 11 Build 22621+ est considéré comme à jour. Windows 10 a atteint la fin du support (EOS: 14 octobre 2025). Les versions antérieures ne reçoivent plus de mises à jour de sécurité et présentent un risque critique. Appliquez immédiatement tous les patchs disponibles via Windows Update.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Aller à Paramètres &gt; Mise à jour et sécurité &gt; Mises à jour Windows &gt; Vérifier les mises à jour. Ou utiliser: Install-Module -Name PSWindowsUpdate -Force; Get-WindowsUpdate -Install -AcceptAll</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Politiques de mots de passe</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 0 réussi(s) | 2 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Password minimum length</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> FAIL (<12)</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Augmentez la longueur minimale des mots de passe (recommandation: 12+ pour utilisateurs, 15+ pour comptes privilégiés).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>net accounts /minpwlen:12</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">LMHASH Disable (NoLMHash)</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> NoLMHash=0:Vulnerable</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer NoLMHash pour empêcher le stockage des empreintes LM dans la base SAM. Les hashes LM sont vulnérables aux attaques par force brute. La valeur 'aad3b435b51404eeaad3b435b51404ee' indique un mot de passe vide ou l'absence de stockage LM.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>secedit /export /cfg C:\secpol.txt; (Get-Content C:\secpol.txt) -replace 'NoLMHash = 0', 'NoLMHash = 1' | Set-Content C:\secpol.txt; secedit /configure /db C:\Windows\security\local.sdb /cfg C:\secpol.txt /overwrite /quiet</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Protection antimalware</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 2 réussi(s) | 0 échoué(s) | 2 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Defender RealTime Protection</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-critical">CRITICAL</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer la protection en temps réel de Windows Defender pour détecter les malwares à l'exécution.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-MpPreference -DisableRealtimeMonitoring $false</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #f59e0b;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">AppLocker Rules</span>
+<span class="status-warning">ATTENTION</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> No rules enforced</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Définir des règles AppLocker pour contrôler l'exécution des binaires et scripts (whitelist par défaut).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>New-AppLockerPolicy -RuleType Exe,Msi,Script,Dll -User Everyone -RuleNamePrefix 'Default' -Force</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #f59e0b;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">ASR Rules (Exploit Guard)</span>
+<span class="status-warning">ATTENTION</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Not Configured</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer les règles de réduction de surface d'attaque (ASR) via GPO ou PowerShell pour bloquer les techniques d'exploitation courantes.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-MpPreference -AttackSurfaceReductionRules_Actions Enabled</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Controlled Folder Access</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Disabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer la protection des dossiers contrôlés pour bloquer les attaques ransomware et les modifications non autorisées.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-MpPreference -EnableControlledFolderAccess Enabled</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Antivirus / EDR Presence</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-critical">CRITICAL</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> ProtectionPresent:Yes
+- WindowsDefender:Active(EngineVersion=1.1.25110.1)
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>La présence d'un antivirus ou EDR est essentielle. Windows Defender doit être actif par défaut. Pour une protection optimale en entreprise, déployer une solution EDR (CrowdStrike, SentinelOne, Defender for Endpoint, etc). Vérifier que les signatures sont à jour et que la protection en temps réel est activée.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Vérifier Defender: Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows Defender' | Select-Object DisableAntiSpyware. Activer: Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Defender' -Name DisableAntiSpyware -Value 0. Vérifier EDR: Get-CimInstance -Namespace 'root\SecurityCenter2' -ClassName 'AntiVirusProduct'</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Protection mémoire</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 0 réussi(s) | 2 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">LSASS RunAsPPL</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-critical">CRITICAL</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> disabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer la protection LSA pour empêcher l'injection de code (Mimikatz). RunAsPPL force LSASS à s'exécuter en mode Protected Process Light.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name RunAsPPL -Value 1 -PropertyType DWORD -Force</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">WDigest (Cleartext Passwords)</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled/default</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Désactiver WDigest pour éviter le stockage de mots de passe en clair en mémoire (attaques post-exploitation).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest' -Name UseLogonCredential -Value 0</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 SMB et protocoles réseau</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 2 réussi(s) | 4 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">SMBv1</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-critical">CRITICAL</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> disabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Désactiver SMBv1, obsolète et vulnérable.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">SMB signing</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> not required</div>
+<div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 4px;">
+<strong style="color: #1e293b;">🔒 Configuration SMB - Signatures et Sécurité</strong>
+
+        <div style="background: #fef3c7; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Paramètres de signature SMB (Serveur) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres de signature SMB (Client) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres NTLM (Relais NTLM) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters\RestrictNullSessAccess = 1</code></li>
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters\NullSessionPipes</code> = (vide)</li>
+            </ul>
+        </div></div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Forcer la signature SMB côté serveur pour se protéger contre le relay NTLM.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters' -Name requiresecuritysignature -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">LLMNR</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> enabled</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés. LLMNR : la clé SOFTWARE\Policies\Microsoft\Windows NT\DNSClient\EnableMulticast doit être présente et définie à 0</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name EnableMulticast -Value 0</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">NetBIOS (NoNameReleaseOnDemand)</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> default</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés. NETBIOS : la clé System\CurrentControlSet\Services\Netbt\Parameters\NoNameReleaseOnDemand doit être définie à 1</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters' -Name NoNameReleaseOnDemand -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">SMB Client Signing</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Not Required</div>
+<div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 4px;">
+<strong style="color: #1e293b;">🔒 Configuration SMB - Signatures et Sécurité</strong>
+
+        <div style="background: #fef3c7; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>Paramètres de signature SMB (Serveur) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres de signature SMB (Client) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters</code>
+                    <ul><li><code>RequireSecuritySignature = 1</code> ✓ (Signature obligatoire)</li>
+                        <li><code>EnableSecuritySignature = 1</code> ✓ (Signature activée)</li></ul>
+                </li>
+            </ul>
+            <strong>Paramètres NTLM (Relais NTLM) :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters\RestrictNullSessAccess = 1</code></li>
+                <li><code>HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters\NullSessionPipes</code> = (vide)</li>
+            </ul>
+        </div></div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Forcer la signature SMB côté client (LanmanWorkstation) pour empêcher que la machine ne serve de relais dans les attaques de replay/relay NTLM.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters' -Name RequireSecuritySignature -Value 1</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">IPv6 Status</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-low">LOW</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Enabled (Default)</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Si IPv6 n'est pas utilisé, le désactiver via la clé DisabledComponents (valeur 0xFF/255) pour réduire la surface d'attaque.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' -Name DisabledComponents -Value 255</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">SMB Share vs NTFS Permissions</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> No shares to audit</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Les permissions SMB et NTFS doivent être alignées. Les droits SMB ne sont restrictifs que s'ils sont plus permissifs que les droits NTFS. Une bonne pratique est: droits SMB restrictifs (Everyone: Read) + droits NTFS granulaires. Auditer régulièrement l'alignement pour éviter les escalades de privilèges.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Vérifier: Get-SmbShare | foreach {Get-SmbShareAccess -Name $_.Name} et comparer avec: Get-Acl 'C:\path\to\share' | Select-Object -ExpandProperty Access. Corriger en harmonisant les droits via Grant-SmbShareAccess et Set-Acl.</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #10b981;">
+<h3>📁 Services et pare-feu</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✓ 1 réussi(s) | 0 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Record dangerous services</span>
+<span class="status-info">INFO</span>
+</div>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> All items completed</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Record firewall profiles</span>
+<span class="status-info">INFO</span>
+</div>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> All items completed</div>
+</div>
+<div class="task-item" style="border-left-color: #10b981;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Service Registry Permissions</span>
+<span class="status-pass">CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> BITS:Secure
+Spooler:Secure
+UpdateOrchestrator:Error/NotFound
+WinRM:Secure
+lsass:Error/NotFound
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Les services critiques ne doivent être modifiables que par SYSTEM et Administrateurs. Supprimer les droits Write/Modify pour le groupe Users ou Utilisateurs authentifiés sur les clés de registre des services.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br># Utiliser icacls ou Set-Acl pour corriger les permissions. Exemple: icacls 'HKLM\SYSTEM\CurrentControlSet\Services\Spooler' /grant:r 'SYSTEM:(F)' /grant:r 'Admins:(F)' /remove 'Users'</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">Startup Services Inventory</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> StartupServices:Count=51
+- BFE
+- BrokerInfrastructure
+- CDPSvc
+- CDPUserSvc_44dbd
+- CoreMessagingRegistrar
+- CryptSvc
+- DcomLaunch
+- Dhcp
+- DiagTrack
+- Dnscache
+- DPS
+- EventLog
+- EventSystem
+- FontCache
+- gpsvc
+- iphlpsvc
+- LanmanServer
+- LanmanWorkstation
+- LSM
+- MDCoreSvc
+- mpssvc
+- MSDTC
+- NlaSvc
+- nsi
+- Power
+- ProfSvc
+- RemoteRegistry
+- RpcEptMapper
+- RpcSs
+- SamSs
+- Schedule
+- SENS
+- ShellHWDetection
+- Spooler
+- sppsvc
+- SysMain
+- SystemEventsBroker
+- Themes
+- TrkWks
+- UALSVC
+- UserManager
+- UsoSvc
+- VBoxService
+- W32Time
+- Wcmsvc
+- WebClient
+- WinDefend
+- Winmgmt
+- WinRM
+- WpnService
+- WpnUserService_44dbd
+</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Auditer les services lancés au démarrage est crucial pour identifier les entrées de persistance malveillante ou les services inutiles qui ralentissent le système. Désactiver les services non essentiels (DiagTrack, Spooler, etc.) et vérifier que les services Automatic n'ont pas été compromis. Chercher les services suspects ou les chemins d'exécution non standards.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Lister via: Get-Service | Where-Object {$_.StartType -eq 'Automatic'} | Select-Object Name, DisplayName. Ou via WMIC: wmic startup get name,command. Désactiver un service: Set-Service -Name 'ServiceName' -StartupType Disabled</div>
+</div>
+</div>
+</div>
+<div class="category-section" style="border-left-color: #ef4444;">
+<h3>📁 Sécurité physique</h3>
+<div style="color: #64748b; margin-bottom: 16px; font-size: 0.95em;">✗ 0 réussi(s) | 2 échoué(s) | 0 avertissement(s)</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">USB AutoRun</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-medium">MEDIUM</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Insecure</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Désactiver l'exécution automatique pour tous les lecteurs pour prévenir les attaques par USB malveillants.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer' -Name NoDriveTypeAutoRun -Value 255</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #ef4444;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">BitLocker C:</span>
+<span class="status-fail">NON-CONFORME</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Off/Not installed</div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Activer BitLocker sur le disque système pour chiffrer les données au repos et protéger contre le vol de données physiques.</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Enable-BitLocker -MountPoint 'C:' -EncryptionMethod Aes256</div>
+</div>
+</div>
+<div class="task-item" style="border-left-color: #6366f1;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<span style="color: #1e293b; font-weight: 600;">BIOS/UEFI Password</span>
+<span class="status-info">INFO</span>
+</div>
+<span class="severity-badge severity-high">HIGH</span>
+<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> Manual verification required</div>
+<div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 4px;">
+<strong style="color: #1e293b;">🖥️ Sécurité Physique - Protection BIOS/UEFI</strong>
+
+        <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>⚠️ Recommandation :</strong>
+            <p style="margin: 8px 0;">Recommandation pour le mot de passe BIOS (pas de check possible mais message à afficher).</p>
+        </div></div>
+<div class="remediation-info">
+<div style="margin-bottom: 12px;"><strong>📋 Recommandation :</strong><br>Recommandation pour le mot de passe BIOS (pas de check possible mais message à afficher).</div>
+<div class="command-block"><strong>💻 Commande :</strong><br>Configurer un mot de passe BIOS/UEFI dans les paramètres du firmware</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+function exportPDF() {
+    const element = document.querySelector(".container");
+    const opt = {
+        margin: 10,
+        filename: "rapport-audit-2026-01-06.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: "portrait", unit: "mm", format: "a4" }
+    };
+    if (typeof html2pdf !== "undefined") {
+        html2pdf().set(opt).from(element).save();
+    } else {
+        alert("Utilisez Ctrl+P pour imprimer en PDF");
+    }
+}
+</script>
+</body>
+</html>
