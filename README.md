@@ -31,7 +31,7 @@ ESGI5-server ansible_host=192.168.8.63
 
 [windows:vars]
 ansible_user=Administrator
-ansible_password=sup3rAdm1nP@sswd!!
+ansible_password=
 ansible_connection=winrm
 ansible_port=5985
 ansible_winrm_transport=ntlm
