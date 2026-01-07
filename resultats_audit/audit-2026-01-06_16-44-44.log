@@ -1,0 +1,155 @@
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Administrator account] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Guest account] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check minimum password length] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check LAPS installation] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check UAC (EnableLUA)] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check SMBv1] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check SMB server signing] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check RDP SecurityLayer] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check RDP NLA] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check dangerous services] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Windows Firewall profiles] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check LLMNR] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check logon/logoff audit policy] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check security log max size] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Sysmon service] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check LSASS RunAsPPL] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check WDigest (Cleartext Passwords)] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check NetBIOS NoNameReleaseOnDemand] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Windows Defender RealTime Protection] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check AppLocker Effective Policy] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Cached Logons Count] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check WinRM Basic Auth & Encryption] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check RDP MinEncryptionLevel] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check ASR Rules Status] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Controlled Folder Access] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check USB AutoRun (NoDriveTypeAutoRun)] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check BitLocker on C drive] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check PowerShell Language Mode] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check SMB Client Signing] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check PowerShell Script Block Logging] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check WSUS Server HTTPS] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check VBS Status] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Audit Local Admin Group Members] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check IPv6 Status] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check WEF Subscription] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check installed software versions] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check service registry permissions] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check NoLMHash Policy] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Smart App Control Status] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check BIOS Password Recommendation] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Windows Update Level] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Windows Hello for Business - GPO] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check JEA Configuration] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check SMB Share Permissions vs NTFS] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: List Startup Services] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: List Running Processes] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Check Antivirus and EDR Status] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+[WARNING]: WorkerProcess for [ESGI5-server/TASK: Detailed Installed Software Inventory] errantly sent data directly to stderr instead of using Display:
+    /usr/lib/python3/dist-packages/spnego/_ntlm_raw/crypto.py:46: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from this module in 48.0.0.
+
+
+Concise JSON exported: exports/audit-2026-01-06_16-45-31.json
+[INFO] Utilisation du fichier : exports/audit-2026-01-06_16-45-31.json
+[OK] Rapport HTML genere avec succes : exports/rapport-audit-detaille-2026-01-06_16-45-31.html
+[SCORE] Score de securite : 48%
+[CRITICAL] Problemes CRITIQUES : 1
+[HIGH] Problemes ELEVES : 10
+[STATS] PASS: 15 | FAIL: 16 | WARNING: 4
+
+[SUCCES] Rapport genere : exports/rapport-audit-detaille-2026-01-06_16-45-31.html
+[INFO] Ouvrez le fichier dans votre navigateur

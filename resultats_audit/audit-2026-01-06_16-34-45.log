@@ -1,0 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Concise JSON exported: exports/audit-2026-01-06_16-35-32.json
+[INFO] Utilisation du fichier : exports/audit-2026-01-06_16-35-32.json
+[OK] Rapport HTML genere avec succes : exports/rapport-audit-detaille-2026-01-06_16-35-33.html
+[SCORE] Score de securite : 48%
+[CRITICAL] Problemes CRITIQUES : 1
+[HIGH] Problemes ELEVES : 10
+[STATS] PASS: 15 | FAIL: 16 | WARNING: 4
+
+[SUCCES] Rapport genere : exports/rapport-audit-detaille-2026-01-06_16-35-33.html
+[INFO] Ouvrez le fichier dans votre navigateur
