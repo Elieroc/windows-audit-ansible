@@ -108,14 +108,25 @@
   },
   "LLMNR": {
     "severity": "MEDIUM",
-    "description": "LLMNR (Link-Local Multicast Name Resolution) peut être exploité pour des attaques de type credential relay.",
-    "remediation": "Désactiver LLMNR si non nécessaire, privilégier DNS.",
+    "description": "Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés.",
+    "remediation": "LLMNR : la clé SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\EnableMulticast doit être présente et définie à 0",
     "commands": [
       "New-Item -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Force",
       "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name 'EnableMulticast' -Value 0"
     ],
     "references": [
       "CIS Microsoft Windows Server Benchmark v3.0.0 - Section 18.5.11.2"
+    ]
+  },
+  "BIOS/UEFI Password": {
+    "severity": "HIGH",
+    "description": "Recommandation pour le mot de passe BIOS (pas de check possible mais message à afficher).",
+    "remediation": "Configurer un mot de passe BIOS/UEFI dans les paramètres du firmware pour empêcher les modifications non autorisées.",
+    "commands": [
+      "# Action manuelle requise : Redémarrer et accéder au BIOS/UEFI pour définir un mot de passe"
+    ],
+    "references": [
+      "ANSSI - Recommandations de sécurité matérielle"
     ]
   },
   "Firewall profile": {
@@ -209,8 +220,8 @@
   },
   "NetBIOS (NoNameReleaseOnDemand)": {
     "severity": "MEDIUM",
-    "description": "NetBIOS non restreint permet les attaques de spoofing et NBT-NS poisoning, utilisées pour intercepter le trafic WPAD et effectuer des attaques man-in-the-middle.",
-    "remediation": "Restreindre NetBIOS en définissant NoNameReleaseOnDemand à 1 pour prévenir les attaques de spoofing.",
+    "description": "Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés.",
+    "remediation": "NETBIOS : la clé System\\CurrentControlSet\\Services\\Netbt\\Parameters\\NoNameReleaseOnDemand doit être définie à 1",
     "commands": [
       "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters' -Name NoNameReleaseOnDemand -Value 1"
     ],

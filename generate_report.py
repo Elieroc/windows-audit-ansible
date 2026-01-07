@@ -97,31 +97,83 @@ def get_enhanced_section(task_name, task_data):
             </ul>
         </div>'''
     
-    # Section BIOS enrichie
-    elif 'BIOS' in task_name or 'UEFI' in task_name:
+    # Section BIOS enrichie (vérifier que ce n'est pas NetBIOS)
+    elif ('BIOS' in task_name or 'UEFI' in task_name) and 'NetBIOS' not in task_name:
         enhanced['title'] = '🖥️ Sécurité Physique - Protection BIOS/UEFI'
         enhanced['details'] = '''
-        <div style="background: #fee2e2; padding: 12px; border-radius: 4px; margin: 8px 0;">
-            <strong>Points de contrôle BIOS/UEFI :</strong>
-            <ul style="margin: 8px 0; padding-left: 20px;">
-                <li>✓ <strong>Mot de passe administrateur BIOS</strong> - Activé et complexe</li>
-                <li>✓ <strong>Mot de passe utilisateur BIOS</strong> - Activé (optionnel mais recommandé)</li>
-                <li>✓ <strong>Secure Boot</strong> - Activé (UEFI)</li>
-                <li>✓ <strong>TPM (Trusted Platform Module)</strong> - Activé et initialisé</li>
-                <li>✓ <strong>Virtualization / VT-x / AMD-V</strong> - Activé si utilisé (Hyper-V, etc.)</li>
-                <li>✓ <strong>Ordre de démarrage</strong> - Correctement configuré (disque dur en premier)</li>
-                <li>⚠️ <strong>USB Boot</strong> - Désactiver si non utilisé</li>
-                <li>⚠️ <strong>Legacy Boot / CSM</strong> - Désactiver si UEFI supporté</li>
-            </ul>
-            <strong>Vérification manuelle requise :</strong>
-            <ul style="margin: 8px 0; padding-left: 20px;">
-                <li>Redémarrer et entrer au BIOS (Delete, F2, F12 selon le fabricant)</li>
-                <li>Vérifier que le mot de passe administrateur est bien défini</li>
-                <li>Confirmer les paramètres de sécurité (Secure Boot, TPM, VT-x)</li>
-            </ul>
+        <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin: 8px 0;">
+            <strong>⚠️ Recommandation :</strong>
+            <p style="margin: 8px 0;">Recommandation pour le mot de passe BIOS (pas de check possible mais message à afficher).</p>
         </div>'''
     
     return enhanced
+
+
+def generate_applications_section(task_data):
+    """Génère une section HTML spéciale pour l'inventaire des applications"""
+    msg = task_data.get('msg', '')
+    
+    if not msg or 'Unable to retrieve' in msg or 'NoApplicationsDetected' in msg or 'Error:' in msg:
+        return '<p style="color: #ef4444;">⚠️ Aucune application détectée ou erreur de récupération. Vérifiez que le script PowerShell s\'exécute correctement.</p>'
+    
+    # Parser les lignes - gérer les formats avec | ou les lignes directes
+    lines = msg.split('\n') if isinstance(msg, str) else msg
+    apps = []
+    
+    for line in lines:
+        if isinstance(line, str):
+            line = line.strip()
+            # Garder les lignes non vides qui ne sont pas des en-têtes
+            if line and not line.startswith(('Application', 'Name', '---', '===')) and line.lower() not in ['version', 'publisher', 'date', 'architecture', 'arch']:
+                apps.append(line)
+    
+    if not apps:
+        return '<p style="color: #f59e0b;">⚠️ Aucune application trouvée dans les données. Le système peut ne pas avoir d\'applications installées via Windows Installer ou l\'accès au registre a échoué.</p>'
+    
+    app_count = len(apps)
+    html = f'<div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #0284c7;">\n'
+    html += f'<p style="color: #0c4a6e; font-weight: 600; margin-bottom: 12px; font-size: 1.1em;">📦 Total: {app_count} application(s) installée(s)</p>\n'
+    html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin: 12px 0;">\n'
+    html += '<thead>\n'
+    html += '<tr>\n'
+    html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Application</th>\n'
+    html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Version</th>\n'
+    html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Éditeur</th>\n'
+    html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Date</th>\n'
+    html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #0284c7; font-weight: 600; color: #0c4a6e;">Arch</th>\n'
+    html += '</tr>\n</thead>\n<tbody>\n'
+    
+    for idx, app in enumerate(apps):
+        # Parser avec | en priorité
+        parts = []
+        if '|' in app:
+            parts = [p.strip() for p in app.split('|')]
+        else:
+            # Sinon c'est le nom complet de l'application
+            parts = [app, 'N/A', 'N/A', 'N/A', 'N/A']
+        
+        # Remplir les parties manquantes
+        while len(parts) < 5:
+            parts.append('N/A')
+        
+        name = parts[0].strip() if parts[0] else 'N/A'
+        version = parts[1].strip() if parts[1] and parts[1].lower() != 'n/a' else 'N/A'
+        publisher = parts[2].strip() if parts[2] and parts[2].lower() != 'n/a' else 'N/A'
+        date = parts[3].strip() if parts[3] and parts[3].lower() != 'n/a' else 'N/A'
+        arch = parts[4].strip() if parts[4] and parts[4].lower() != 'n/a' else 'N/A'
+        
+        bg_color = '#ffffff' if idx % 2 == 0 else '#f0f9ff'
+        html += f'<tr style="background: {bg_color};">\n'
+        html += f'<td style="padding: 8px; border-bottom: 1px solid #e0f2fe; color: #0c4a6e;">{name}</td>\n'
+        html += f'<td style="padding: 8px; border-bottom: 1px solid #e0f2fe; color: #475569;">{version}</td>\n'
+        html += f'<td style="padding: 8px; border-bottom: 1px solid #e0f2fe; color: #475569;">{publisher}</td>\n'
+        html += f'<td style="padding: 8px; border-bottom: 1px solid #e0f2fe; color: #475569;">{date}</td>\n'
+        html += f'<td style="padding: 8px; border-bottom: 1px solid #e0f2fe; text-align: center; color: #475569;">{arch}</td>\n'
+        html += '</tr>\n'
+    
+    html += '</tbody>\n</table>\n</div>\n'
+    
+    return html
 
 
 def categorize_task(task_name):
@@ -734,7 +786,10 @@ def generate_html_report(audit_data, remediation_data, output_file):
                     sev_lower = severity.lower()
                     html_content += '<span class="severity-badge severity-' + sev_lower + '">' + severity + '</span>\n'
                 
-                if msg and msg != 'N/A':
+                # Section spéciale pour l'inventaire des applications
+                if 'Installed Software Inventory' in task_name or 'Applications détaillées' in task_name:
+                    html_content += generate_applications_section(task)
+                elif msg and msg != 'N/A':
                     html_content += '<div style="color: #64748b; font-size: 0.9em; margin: 8px 0;"><strong>Détail :</strong> ' + msg + '</div>\n'
                 
                 # Ajouter les sections enrichies
@@ -837,3 +892,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -196,7 +196,7 @@
           msg: "{{ 'disabled' if llmnr.stdout.strip() == '0' else 'enabled' }}"
           audit_status: "{{ 'PASS' if llmnr.stdout.strip() == '0' else 'FAIL' }}"
           severity: "MEDIUM"
-          mitigation_advice: "Désactiver LLMNR via GPO pour prévenir le spoofing."
+          mitigation_advice: "Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés. LLMNR : la clé SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\EnableMulticast doit être présente et définie à 0"
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name EnableMulticast -Value 0"
 
     # --- Audit Policy ---
@@ -291,7 +291,7 @@
           msg: "{{ 'restricted' if netbios_check.stdout.strip() == '1' else 'default' }}"
           audit_status: "{{ 'PASS' if netbios_check.stdout.strip() == '1' else 'FAIL' }}"
           severity: "MEDIUM"
-          mitigation_advice: "Restreindre NetBIOS pour éviter les attaques de type spoofing/NBT-NS poisoning (interception WPAD)."
+          mitigation_advice: "Afin de se protéger de certaines attaques par Man-In-The-Middle, les protocoles de résolution de noms NBT-NS et LLMNR doivent être désactivés. NETBIOS : la clé System\\CurrentControlSet\\Services\\Netbt\\Parameters\\NoNameReleaseOnDemand doit être définie à 1"
           mitigation_cmd: "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters' -Name NoNameReleaseOnDemand -Value 1"
 
     # --- BLOC 3 : Windows Defender & AppLocker ---
@@ -493,6 +493,7 @@
             Write-Output "Insecure (HTTP)" 
         }
       register: wsus_check
+      ignore_errors: yes
 
     - name: Record WSUS Security
       debug:
@@ -512,6 +513,7 @@
             if ($vbs -contains 1) { Write-Output "Running" } else { Write-Output "Not Running" }
         } catch { Write-Output "Not Compatible/Not Found" }
       register: vbs_status
+      ignore_errors: yes
 
     - name: Record VBS Status
       debug:
@@ -525,8 +527,18 @@
 
     # --- BLOC 13 : Local Admin Group Members ---
     - name: Audit Local Admin Group Members
-      win_shell: "Get-LocalGroupMember -Group 'Administrateurs' | Select-Object -ExpandProperty Name"
+      win_shell: |
+        try {
+            Get-LocalGroupMember -Group 'Administrators' -ErrorAction Stop | Select-Object -ExpandProperty Name
+        } catch {
+            try {
+                Get-LocalGroupMember -Group 'Administrateurs' -ErrorAction Stop | Select-Object -ExpandProperty Name
+            } catch {
+                Write-Output "Error: Unable to query local administrators group"
+            }
+        }
       register: admin_members
+      ignore_errors: yes
 
     - name: Record Local Admins
       debug:
@@ -646,7 +658,7 @@
         try {
           $output = secedit /export /cfg $env:TEMP\secpol.txt
           $lmhash = (Select-String -Path "$env:TEMP\secpol.txt" -Pattern "NoLMHash" | Select-Object -First 1).ToString()
-          if ($lmhash -match "NoLMHash\s*=\s*1") {
+          if ($lmhash -match "NoLMHash\s*=\s*[0-9]+,1") {
             Write-Output "NoLMHash=1:Secure"
           } elseif ($lmhash -match "NoLMHash") {
             Write-Output "NoLMHash=0:Vulnerable"
@@ -710,11 +722,11 @@
       debug:
         msg:
           task: "BIOS/UEFI Password"
-          msg: "{{ 'Manual verification required - check BIOS/UEFI settings for password protection' }}"
+          msg: "Manual verification required"
           audit_status: "INFO"
           severity: "HIGH"
-          mitigation_advice: "La protection par mot de passe du BIOS/UEFI est recommandée pour empêcher les modifications non autorisées des paramètres de démarrage et l'accès aux paramètres de sécurité critiques. Cela protège également contre les attaques Cold Boot et les modification de l'ordre de démarrage. Vérification manuelle requise dans le firmware."
-          mitigation_cmd: "Redémarrer, entrer dans les paramètres BIOS/UEFI (généralement Delete, F2, F12, ou Ctrl+Alt+Entrée selon le fabricant), et définir un mot de passe administrateur BIOS fort."
+          mitigation_advice: "Recommandation pour le mot de passe BIOS (pas de check possible mais message à afficher)."
+          mitigation_cmd: "Configurer un mot de passe BIOS/UEFI dans les paramètres du firmware"
 
     # --- BLOC 21 : Niveau des Mises à Jour Windows ---
     - name: Check Windows Update Level
@@ -1011,47 +1023,53 @@
     # --- BLOC 28 : Inventaire Détaillé des Applications Installées ---
     - name: Detailed Installed Software Inventory
       win_shell: |
-        try {
-          $appsList = @()
-          
-          # Récupérer depuis 64-bit
-          $apps64 = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
-            Where-Object { $_.DisplayName } | 
-            Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, @{Name='Architecture';Expression={'64-bit'}}
-          
-          # Récupérer depuis 32-bit
-          $apps32 = Get-ItemProperty "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue | 
-            Where-Object { $_.DisplayName } | 
-            Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, @{Name='Architecture';Expression={'32-bit'}}
-          
-          # Combiner et trier
-          $allApps = @($apps64) + @($apps32) | Sort-Object DisplayName -Unique
-          
-          if ($allApps.Count -gt 0) {
-            Write-Output "InstalledApplications:Count=$($allApps.Count)"
-            Write-Output "==========================================="
-            foreach ($app in $allApps) {
-              $name = $app.DisplayName
-              $version = if ($app.DisplayVersion) { $app.DisplayVersion } else { "Unknown" }
-              $publisher = if ($app.Publisher) { $app.Publisher } else { "N/A" }
-              $date = if ($app.InstallDate) { $app.InstallDate } else { "N/A" }
-              $arch = $app.Architecture
-              Write-Output "$name | v$version | Publisher: $publisher | Installed: $date | Arch: $arch"
-            }
-            Write-Output "==========================================="
-          } else {
-            Write-Output "NoApplicationsDetected"
+        $allApps = @()
+        $reg64 = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue
+        $filtered64 = $reg64 | Where-Object { $_.DisplayName }
+        
+        foreach ($app in $filtered64) {
+          $allApps += [PSCustomObject]@{
+            DisplayName = $app.DisplayName
+            DisplayVersion = if ($app.DisplayVersion) { $app.DisplayVersion } else { "Unknown" }
+            Publisher = if ($app.Publisher) { $app.Publisher } else { "N/A" }
+            InstallDate = if ($app.InstallDate) { $app.InstallDate } else { "N/A" }
+            Architecture = "64-bit"
           }
-        } catch {
-          Write-Output "Error:Unable to retrieve installed applications"
+        }
+        
+        $reg32 = Get-ItemProperty "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue
+        $filtered32 = $reg32 | Where-Object { $_.DisplayName }
+        
+        foreach ($app in $filtered32) {
+          $allApps += [PSCustomObject]@{
+            DisplayName = $app.DisplayName
+            DisplayVersion = if ($app.DisplayVersion) { $app.DisplayVersion } else { "Unknown" }
+            Publisher = if ($app.Publisher) { $app.Publisher } else { "N/A" }
+            InstallDate = if ($app.InstallDate) { $app.InstallDate } else { "N/A" }
+            Architecture = "32-bit"
+          }
+        }
+        
+        $uniqueApps = $allApps | Sort-Object DisplayName -Unique
+        
+        if ($uniqueApps.Count -gt 0) {
+          Write-Output "InstalledApplications:Count=$($uniqueApps.Count)"
+          Write-Output "==========================================="
+          foreach ($app in $uniqueApps) {
+            Write-Output "$($app.DisplayName) | v$($app.DisplayVersion) | Publisher: $($app.Publisher) | Installed: $($app.InstallDate) | Arch: $($app.Architecture)"
+          }
+          Write-Output "==========================================="
+        } else {
+          Write-Output "NoApplicationsDetected"
         }
       register: detailed_apps_list
+      ignore_errors: yes
 
     - name: Record Detailed Applications List
       debug:
         msg:
           task: "Detailed Installed Software Inventory"
-          msg: "{{ detailed_apps_list.stdout if detailed_apps_list.stdout.strip() else 'Unable to retrieve' }}"
+          msg: "{{ detailed_apps_list.stdout if detailed_apps_list.stdout else 'Unable to retrieve' }}"
           audit_status: "INFO"
           severity: "INFO"
           mitigation_advice: "Audit complet de toutes les applications installées avec versions, éditeurs et dates. Cet inventaire permet de détecter: les applications non autorisées, les versions vulnérables, les doublons, les applications orphelines. Mettre à jour régulièrement et supprimer les applications non essentielles ou obsolètes."
